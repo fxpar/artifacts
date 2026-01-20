@@ -18,4 +18,5 @@ Created in 3 minutes with a free AI (Gemini)
 
 Video tutorial for how to create: https://www.youtube.com/watch?v=JLm4EEcDnMY
 
-Pedagogy project based on "Phase 2" of the "Teaching to the mediated Mind" framework: https://osf.io/nxaqb_v1  DOI: 10.35542/osf.io/nxaqb_v1
+Pedagogy project based on "Phase 2" of the "Teaching to the AI mediated Mind" framework: https://osf.io/nxaqb_v1  DOI: 10.35542/osf.io/nxaqb_v1
+
