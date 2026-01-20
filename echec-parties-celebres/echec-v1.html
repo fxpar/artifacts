@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Lecteur de Parties Célèbres</title>
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #2c3e50; color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+        #board { width: 450px; border: 5px solid #34495e; border-radius: 5px; }
+        .controls { width: 350px; background: #34495e; padding: 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .btn { background: #27ae60; border: none; color: white; padding: 10px 15px; cursor: pointer; border-radius: 4px; margin: 5px 0; width: 100%; font-weight: bold; }
+        .btn:hover { background: #2ecc71; }
+        .btn-pause { background: #e67e22; }
+        .btn-theme { background: #3498db; }
+        select, input, textarea { width: 100%; margin-bottom: 15px; padding: 8px; border-radius: 4px; border: none; }
+        .info { margin-top: 10px; font-size: 0.9em; color: #bdc3c7; }
+        h2 { margin-top: 0; color: #ecf0f1; }
+    </style>
+</head>
+<body>
+
+    <h1>♟️ Lecteur de Parties Célèbres</h1>
+
+    <div class="container">
+        <div id="board"></div>
+
+        <div class="controls">
+            <h2>Contrôles</h2>
+            
+            <label>Parties enregistrées :</label>
+            <select id="gameSelect" onchange="loadSelectedGame()"></select>
+
+            <button class="btn" id="playBtn" onclick="togglePlay()">Lecture</button>
+            
+            <label>Vitesse (ms entre les coups) :</label>
+            <input type="range" id="speedRange" min="200" max="3000" value="1000" step="100">
+            <span id="speedVal">1000ms</span>
+
+            <hr>
+            
+            <label>Changer de Thème :</label>
+            <select id="themeSelect" onchange="changeTheme()">
+                <option value="wikipedia">Classique (Wikipedia)</option>
+                <option value="alpha">Alpha (Moderne)</option>
+                <option value="uscf">USCF (Tournoi)</option>
+            </select>
+
+            <hr>
+
+            <label>Importer PGN :</label>
+            <input type="text" id="pgnName" placeholder="Nom de la partie">
+            <textarea id="pgnInput" rows="3" placeholder="Collez le code PGN ici..."></textarea>
+            <button class="btn" onclick="saveNewGame()">Enregistrer en local</button>
+
+            <div class="info" id="gameInfo"></div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+    <script>
+        let board = null;
+        let game = new Chess();
+        let moveHistory = [];
+        let currentMoveIndex = 0;
+        let isPlaying = false;
+        let playInterval = null;
+
+        // --- Parties par défaut ---
+        const defaultGames = [
+            { name: "Kasparov vs Topalov (1999)", pgn: "1. e4 d6 2. d4 Nf6 3. Nc3 g6 4. Be3 Bg7 5. Qd2 c6 6. f3 b5 7. Nge2 Nbd7 8. Bh6 Bxh6 9. Qxh6 Bb7 10. a3 e5 11. O-O-O Qe7 12. Kb1 a6 13. Nc1 O-O-O 14. Nb3 exd4 15. Rxd4 c5 16. Rd1 Nb6 17. g3 Kb8 18. Na5 Ba8 19. Bh3 d5 20. Qf4+ Ka7 21. Rhe1 d4 22. Nd5 Nbxd5 23. exd5 Qd6 24. Rxd4 cxd4 25. Re7+ Kb6 26. Qxd4+ Kxa5 27. b4+ Ka4 28. Qc3 Qxd5 29. Ra7 Bb7 30. Rxb7 Qc4 31. Qxf6 Kxa3 32. Qxa6+ Kxb4 33. c3+ Kxc3 34. Qa1+ Kd2 35. Qb2+ Kd1 36. Bf1 Rd2 37. Rd7 Rxd7 38. Bxc4 bxc4 39. Qxh8 Rd3 40. Qa8 c3 41. Qa4+ Ke1 42. f4 f5 43. Kc1 Rd2 44. Qa7" },
+            { name: "L'Immortelle (Andersen, 1851)", pgn: "1. e4 e5 2. f4 exf4 3. Bc4 Qh4+ 4. Kf1 b5 5. Bxb5 Nf6 6. Nf3 Qh6 7. d3 Nh5 8. Nh4 Qg5 9. Nf5 c6 10. g4 Nf6 11. Rg1 cxb5 12. h4 Qg6 13. h5 Qg5 14. Qf3 Ng8 15. Bxf4 Qf6 16. Nc3 Bc5 17. Nd5 Qxb2 18. Bd6 Bxg1 19. e5 Qxa1+ 20. Ke2 Na6 21. Nxg7+ Kd8 22. Qf6+ Nxf6 23. Be7#" },
+            { name: "Deep Blue vs Kasparov (1996)", pgn: "1. e4 c5 2. c3 d5 3. exd5 Qxd5 4. d4 Nf6 5. Nf3 Bg4 6. Be2 e6 7. h3 Bh5 8. O-O Nc6 9. Be3 cxd4 10. cxd4 Bb4 11. a3 Ba5 12. Nc3 Qd6 13. Nb5 Qe7 14. Ne5 Bxe2 15. Qxe2 O-O 16. Rac1 Rac8 17. Bg5 Bb6 18. Bxf6 gxf6 19. Nc4 Rfd8 20. Nxb6 axb6 21. Rfd1 f5 22. Qe3 Qf6 23. d5 Rxd5 24. Rxd5 exd5 25. b3 Kh8 26. Qxb6 Rg8 27. Qc5 d4 28. Nd6 f4 29. Nxb7 Ne5 30. Qd5 f3 31. g3 Nd3 32. Rc7 Re8 33. Nd6 Re1+ 34. Kh2 Nxf2 35. Nxf7+ Kg7 36. Ng5+ Kh6 37. Rxh7+" }
+        ];
+
+        // --- Initialisation ---
+        function init() {
+            let saved = JSON.parse(localStorage.getItem('chessGames')) || defaultGames;
+            const select = document.getElementById('gameSelect');
+            select.innerHTML = '';
+            saved.forEach((g, index) => {
+                let opt = document.createElement('option');
+                opt.value = index;
+                opt.innerHTML = g.name;
+                select.appendChild(opt);
+            });
+
+            board = Chessboard('board', {
+                position: 'start',
+                pieceTheme: 'https://raw.githubusercontent.com/oakmac/chessboardjs/master/website/img/chesspieces/wikipedia/{piece}.png'
+            });
+            
+            loadSelectedGame();
+        }
+
+        function loadSelectedGame() {
+            pause();
+            const saved = JSON.parse(localStorage.getItem('chessGames')) || defaultGames;
+            const gameData = saved[document.getElementById('gameSelect').value];
+            
+            game = new Chess();
+            game.load_pgn(gameData.pgn);
+            moveHistory = game.history();
+            game.reset();
+            board.start();
+            currentMoveIndex = 0;
+            isPlaying = false;
+            document.getElementById('playBtn').innerText = "Lecture";
+            document.getElementById('playBtn').classList.remove('btn-pause');
+            updateInfo();
+        }
+
+        // --- Moteur de lecture ---
+        function togglePlay() {
+            if (isPlaying) pause();
+            else play();
+        }
+
+        function play() {
+            if (currentMoveIndex >= moveHistory.length) {
+                game.reset();
+                board.start();
+                currentMoveIndex = 0;
+            }
+            isPlaying = true;
+            document.getElementById('playBtn').innerText = "Pause";
+            document.getElementById('playBtn').classList.add('btn-pause');
+            
+            const speed = document.getElementById('speedRange').value;
+            playInterval = setInterval(makeMove, speed);
+        }
+
+        function pause() {
+            isPlaying = false;
+            clearInterval(playInterval);
+            document.getElementById('playBtn').innerText = "Reprendre";
+            document.getElementById('playBtn').classList.remove('btn-pause');
+        }
+
+        function makeMove() {
+            if (currentMoveIndex >= moveHistory.length) {
+                pause();
+                return;
+            }
+            game.move(moveHistory[currentMoveIndex]);
+            board.position(game.fen());
+            currentMoveIndex++;
+            updateInfo();
+        }
+
+        // --- Utilitaires ---
+        function updateInfo() {
+            document.getElementById('gameInfo').innerText = `Coup : ${currentMoveIndex} / ${moveHistory.length}`;
+        }
+
+        function changeTheme() {
+            const theme = document.getElementById('themeSelect').value;
+            const themePath = `https://raw.githubusercontent.com/oakmac/chessboardjs/master/website/img/chesspieces/${theme}/{piece}.png`;
+            
+            board = Chessboard('board', {
+                position: game.fen(),
+                pieceTheme: themePath
+            });
+        }
+
+        function saveNewGame() {
+            const name = document.getElementById('pgnName').value || "Nouvelle Partie";
+            const pgn = document.getElementById('pgnInput').value;
+            
+            if(!pgn) return alert("Veuillez entrer un PGN");
+
+            let saved = JSON.parse(localStorage.getItem('chessGames')) || defaultGames;
+            saved.push({ name, pgn });
+            localStorage.setItem('chessGames', JSON.stringify(saved));
+            
+            document.getElementById('pgnName').value = "";
+            document.getElementById('pgnInput').value = "";
+            init();
+            alert("Partie enregistrée !");
+        }
+
+        // Mise à jour affichage vitesse
+        document.getElementById('speedRange').oninput = function() {
+            document.getElementById('speedVal').innerText = this.value + "ms";
+            if(isPlaying) { pause(); play(); }
+        };
+
+        window.onload = init;
+    </script>
+</body>
+</html>
