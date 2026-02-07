@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Convertisseur Excel vers Markdown Pro</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 1000px; margin: 20px auto; padding: 20px; background: #f0f2f5; }
+        #drop-zone { width: 100%; height: 120px; border: 3px dashed #107c10; background: #fff; display: flex; align-items: center; justify-content: center; color: #107c10; font-weight: bold; cursor: pointer; margin-bottom: 20px; border-radius: 8px; }
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        textarea { width: 100%; height: 350px; margin-top: 20px; font-family: 'Consolas', monospace; border: 1px solid #ccc; padding: 15px; border-radius: 4px; font-size: 14px; line-height: 1.5; }
+        h3 { margin-top: 0; color: #333; border-bottom: 2px solid #107c10; padding-bottom: 5px; }
+        label { cursor: pointer; display: block; margin: 8px 0; color: #444; }
+        .preview { margin-top: 20px; padding: 15px; background: #e8f5e9; border-radius: 4px; font-size: 0.9em; color: #2e7d32; }
+    </style>
+</head>
+<body>
+
+    <h2>Convertisseur Excel/Word vers Markdown</h2>
+    
+    <div id="drop-zone" contenteditable="true">
+        CLIQUEZ ICI PUIS COLLEZ (CTRL+V)
+    </div>
+
+    <div class="controls">
+        <div class="option-group">
+            <h3>Structure Excel</h3>
+            <label><input type="checkbox" id="addIndices" checked> Ajouter adresses (A, B, C / 1, 2...)</label>
+            <label><input type="checkbox" id="cleanNumbers" checked> Réparer les nombres coupés (Total général)</label>
+        </div>
+        <div class="option-group">
+            <h3>Formatage & Nettoyage</h3>
+            <label><input type="checkbox" id="keepStyle"> Conserver Gras/Italique</label>
+            <label><input type="checkbox" id="handleMultiline"> Remplacer retours ligne par &lt;br&gt;</label>
+            <label><input type="checkbox" id="stripCurrency"> Supprimer symboles monétaires (€, $)</label>
+        </div>
+    </div>
+
+    <textarea id="output" readonly placeholder="Le code Markdown apparaîtra ici..."></textarea>
+    <div class="preview" id="status">En attente de contenu...</div>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const output = document.getElementById('output');
+        const status = document.getElementById('status');
+
+        dropZone.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const html = e.clipboardData.getData('text/html');
+            const plainText = e.clipboardData.getData('text/plain');
+            
+            if (html) {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const table = doc.querySelector('table');
+                
+                if (table) {
+                    processTable(table);
+                    status.innerText = "Tableau détecté et converti avec succès.";
+                } else {
+                    status.innerText = "Tableau complexe non trouvé, tentative via texte brut...";
+                    processPlainText(plainText);
+                }
+            } else {
+                processPlainText(plainText);
+            }
+        });
+
+        function cleanCellContent(cell) {
+            let content = "";
+            const keepStyle = document.getElementById('keepStyle').checked;
+            const handleMultiline = document.getElementById('handleMultiline').checked;
+            const cleanNumbers = document.getElementById('cleanNumbers').checked;
+            const stripCurrency = document.getElementById('stripCurrency').checked;
+
+            if (keepStyle) {
+                // On garde un formatage minimaliste
+                content = cell.innerHTML
+                    .replace(/<b>|<strong>/gi, '**').replace(/<\/b>|<\/strong>/gi, '**')
+                    .replace(/<i>|<em>/gi, '*').replace(/<\/i>|<\/em>/gi, '*');
+            } else {
+                content = cell.innerText;
+            }
+
+            // NETTOYAGE CRITIQUE :
+            // 1. Remplace les espaces insécables (&nbsp; / \u00a0) par des espaces normaux
+            content = content.replace(/\u00a0/g, ' ');
+
+            // 2. Gestion du "Total général" et nombres coupés
+            if (cleanNumbers) {
+				// Normalise tous les types d'espaces en un seul espace simple
+				content = content.replace(/\s+/g, ' '); 
+                // Supprime les retours à la ligne entre deux chiffres (ex: 1 \n 268)
+                content = content.replace(/(\d)\s*\n\s*(\d)/g, '$1 $2');
+            }
+
+            // 3. Gestion des retours à la ligne internes
+            if (handleMultiline) {
+                content = content.replace(/\n/g, '<br>');
+            } else {
+                content = content.replace(/\n/g, ' ');
+            }
+
+            if (stripCurrency) {
+                content = content.replace(/[€$£]/g, '');
+            }
+
+            // 4. Échapper le caractère pipe pour ne pas casser le tableau MD
+            return content.replace(/\|/g, '\\|').trim();
+        }
+
+        function processTable(table) {
+            const rows = Array.from(table.querySelectorAll('tr'));
+            let mdRows = [];
+            const addIndices = document.getElementById('addIndices').checked;
+
+            let maxCols = 0;
+            rows.forEach(row => maxCols = Math.max(maxCols, row.cells.length));
+
+            if (addIndices) {
+                let headerLetters = [" "];
+                for (let i = 0; i < maxCols; i++) {
+                    headerLetters.push(String.fromCharCode(65 + i));
+                }
+                mdRows.push("| " + headerLetters.join(" | ") + " |");
+                mdRows.push("|" + headerLetters.map(() => "---").join("|") + "|");
+            }
+
+            rows.forEach((row, rowIndex) => {
+                let cells = [];
+                if (addIndices) cells.push(`**${rowIndex + 1}**`);
+
+                Array.from(row.cells).forEach(cell => {
+                    cells.push(cleanCellContent(cell));
+                });
+
+                mdRows.push("| " + cells.join(" | ") + " |");
+                if (!addIndices && rowIndex === 0) {
+                    mdRows.push("|" + cells.map(() => "---").join("|") + "|");
+                }
+            });
+
+            output.value = mdRows.join("\n");
+        }
+
+        function processPlainText(text) {
+            // Repli si le HTML échoue (format TSV)
+            const lines = text.trim().split('\n');
+            let md = lines.map(line => "| " + line.split('\t').join(" | ") + " |").join("\n");
+            output.value = md;
+            status.innerText = "Converti depuis texte brut (Tabulations).";
+        }
+    </script>
+</body>
+</html>
