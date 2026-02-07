@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Moodle XML Translator Helper - Corrected</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; max-width: 900px; margin: 20px auto; padding: 0 20px; background: #f4f7f6; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h2 { color: #0070d2; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .step { display: flex; align-items: center; gap: 10px; margin: 15px 0; }
+        button { background: #0070d2; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #0056a3; }
+        .download-zone { display: flex; gap: 10px; background: #e7eff6; padding: 15px; border-radius: 6px; }
+        .info { font-size: 0.9em; color: #666; }
+    </style>
+</head>
+<body>
+
+    <h1>Moodle XML Translator Helper</h1>
+
+    <div class="card">
+        <h2>1. Extraction & Squelette</h2>
+        <p class="info">Séparez le texte (pour traduction) de la structure lourde (images/codes).</p>
+        <div class="step">
+            <input type="file" id="sourceFile" accept=".xml">
+            <button onclick="processSource()">Extraire les données</button>
+        </div>
+        <div id="downloadLinks" style="display:none;" class="download-zone">
+            <button onclick="download('skeleton')">💾 Télécharger Squelette</button>
+            <button onclick="download('translation')">📝 Télécharger Fichier Traduction</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>2. Reconstitution du fichier final</h2>
+        <p class="info">Fusionnez le squelette avec votre fichier XML traduit.</p>
+        <div class="step">
+            <label>Squelette :</label>
+            <input type="file" id="skeletonFile" accept=".xml">
+        </div>
+        <div class="step">
+            <label>Fichier traduit :</label>
+            <input type="file" id="translatedFile" accept=".xml">
+        </div>
+        <button onclick="mergeFiles()" style="background: #28a745;">🚀 Fusionner et Télécharger le XML Final</button>
+    </div>
+
+    <script>
+        let skeletonXml = "";
+        let translationXml = "";
+
+        // --- FONCTION D'EXTRACTION ---
+        async function processSource() {
+            const fileInput = document.getElementById('sourceFile');
+            if (!fileInput.files[0]) return alert("Sélectionnez un fichier !");
+
+            const text = await fileInput.files[0].text();
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(text, "text/xml");
+            
+            const questions = xmlDoc.getElementsByTagName("question");
+            const skeletonDoc = xmlDoc.cloneNode(true);
+            const transDoc = document.implementation.createDocument("", "translation", null);
+            
+            const skQuestions = skeletonDoc.getElementsByTagName("question");
+
+            for (let i = 0; i < skQuestions.length; i++) {
+                let qTrans = transDoc.createElement("question");
+                qTrans.setAttribute("id", i);
+                
+                // On cible les balises <text> qui sont les enfants directs ou proches de question, answer, etc.
+                const textNodes = skQuestions[i].querySelectorAll("text");
+                
+                textNodes.forEach((node, nodeIdx) => {
+                    // 1. Détecter si le noeud source contient du CDATA
+                    let hasCdata = false;
+                    for (let child of node.childNodes) {
+                        if (child.nodeType === 4) { // 4 = CDATA_SECTION_NODE
+                            hasCdata = true;
+                            break;
+                        }
+                    }
+
+                    // 2. Créer l'item de traduction
+                    let tNode = transDoc.createElement("item");
+                    tNode.setAttribute("node_idx", nodeIdx);
+                    tNode.setAttribute("use_cdata", hasCdata ? "true" : "false");
+
+                    if (hasCdata) {
+                        let cdata = transDoc.createCDATASection(node.textContent);
+                        tNode.appendChild(cdata);
+                    } else {
+                        tNode.textContent = node.textContent;
+                    }
+                    
+                    qTrans.appendChild(tNode);
+
+                    // 3. Marquer le squelette
+                    node.textContent = `[[REPLACE_${i}_${nodeIdx}]]`;
+                });
+                
+                transDoc.documentElement.appendChild(qTrans);
+            }
+
+            skeletonXml = new XMLSerializer().serializeToString(skeletonDoc);
+            translationXml = new XMLSerializer().serializeToString(transDoc);
+            
+            document.getElementById('downloadLinks').style.display = "flex";
+            alert("Extraction terminée !");
+        }
+
+        // --- FONCTION DE FUSION ---
+        async function mergeFiles() {
+            const skInput = document.getElementById('skeletonFile');
+            const trInput = document.getElementById('translatedFile');
+
+            if (!skInput.files[0] || !trInput.files[0]) return alert("Veuillez charger les deux fichiers (Squelette et Traduit).");
+
+            let finalXml = await skInput.files[0].text();
+            const trText = await trInput.files[0].text();
+            
+            const parser = new DOMParser();
+            const trDoc = parser.parseFromString(trText, "text/xml");
+            const questions = trDoc.getElementsByTagName("question");
+
+            for (let q of questions) {
+                const qId = q.getAttribute("id");
+                const items = q.getElementsByTagName("item");
+
+                for (let item of items) {
+                    const nId = item.getAttribute("node_idx");
+                    const useCdata = item.getAttribute("use_cdata") === "true";
+                    const translatedContent = item.textContent;
+                    
+                    const placeholder = `[[REPLACE_${qId}_${nId}]]`;
+                    
+                    // On reconstruit la valeur exacte à injecter
+                    let replacement;
+if (useCdata) {
+    replacement = `<![CDATA[${translatedContent}]]>`;
+} else {
+    // On échappe TOUS les caractères spéciaux pour éviter les erreurs d'import
+    replacement = translatedContent.replace(/[&<>"']/g, function(m) {
+        return {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&apos;'
+        }[m];
+    });
+    
+    // On force l'encodage des caractères spéciaux comme l'ellipse … ou les espaces insécables
+    replacement = replacement.replace(/[^\x00-\x7F]/g, function(c) {
+        return "&#" + c.charCodeAt(0) + ";";
+    });
+}
+
+                    // Remplacement dans le gros bloc texte du squelette
+                    finalXml = finalXml.replace(placeholder, replacement);
+                }
+            }
+            
+            saveFile(finalXml, "moodle_final_reconstruit.xml");
+        }
+
+        function download(type) {
+            const content = type === 'skeleton' ? skeletonXml : translationXml;
+            const name = type === 'skeleton' ? "squelette.xml" : "a_traduire.xml";
+            saveFile(content, name);
+        }
+
+        function saveFile(content, filename) {
+            const blob = new Blob([content], {type: "text/xml"});
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+        }
+    </script>
+</body>
+</html>
