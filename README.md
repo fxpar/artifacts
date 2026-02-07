@@ -7,6 +7,7 @@
 
 _____________
 
+# Artifacts
 
 Artefacts (petits outils) créés par IA pour différentes utilités
 
@@ -25,5 +26,6 @@ Artefacts (petits outils) créés par IA pour différentes utilités
 
 - [data-en-cards](data-en-cards): Remplit des modèles de "cartes" à partir de données json ou csv
 - [word-sans-titres](word-sans-titres): Retire le "niveau de titre" tout en conservant la mise en forme (utile pour créer un exercice où les étudiants doivent refaire la table des matières)
-- [convertisseur-tableaux-markdown-json-csv](convertisseur-tableaux-markdown-json-csv): permet de transformer différents tableaux Excel / Word en markdon, en choisissant des paramètres: ajouter les numéros de ligne et lettre des colonne, conserver les formats, les symboles monétaires...
+- [tableau-excel-word-html](tableau-excel-word-html): convertit des tableaux Excel ou Word en html, en choisissant des paramètres: ajouter les numéros de ligne et lettre des colonne, conserver les formats, les symboles monétaires...
+- [tableaux-excel-word-markdown-json-csv](tableaux-excel-word-markdown-json-csv): permet de transformer différents tableaux Excel / Word en markdown, csv ou json
 - [markdown-html](markdown-html): Convertit du markdown en html: attention, beaucoup de caractères sont transformé en entité (l'apostrophe et les accents sont convertis pour avoir un format html strict)
