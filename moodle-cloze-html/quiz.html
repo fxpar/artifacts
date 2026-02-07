@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Quiz Moodle Cloze</title>
+	<script type="text/javascript" src="cloze.js"></script>
+    <style>
+        /* Styles CSS pour un meilleur affichage */
+        body { font-family: sans-serif; padding: 20px; }
+        #quiz-container { border: 1px solid #ccc; padding: 20px; border-radius: 8px; line-height: 1.8; }
+        .quiz-gap { display: inline-flex; flex-direction: column; vertical-align: middle; margin: 0 5px; }
+        .quiz-text { white-space: pre-wrap; } /* Préserve les sauts de ligne */
+        .cloze-input, .cloze-select { padding: 4px; border: 1px solid #aaa; border-radius: 4px; font-size: 1em; }
+        .feedback-msg { font-size: 0.8em; margin-top: 2px; padding: 2px 5px; border-radius: 3px; }
+        .correct { color: white; background-color: #4CAF50; } /* Vert pour correct */
+        .incorrect { color: white; background-color: #F44336; } /* Rouge pour incorrect */
+        button { padding: 10px 15px; cursor: pointer; border: none; border-radius: 5px; background-color: #007bff; color: white; }
+    </style>
+
+</head>
+<body onload="addQuizTargets();">
+
+    <h1>Convertisseur Cloze en Quiz Web</h1>
+    
+   
+<textarea id="q_01" style="display:none">
+<img src="./img/image (4).png" />
+Complétez la formule de la cellule sélectionnée, pour afficher <b>oui</b> quand la <b>quantité est strictement en dessous du seuil de réassort</b>, et laisser vide dans les autres cas.
+
+={:SA:=SI} ( {:SA:=B4~=$B4} {:MC: =~=<~<=~>~>=~<>} {:SA:=B$1~=$B$1} ; "oui" ; {:SA:=""} )
+
+</textarea>
+<textarea id="q_02" style="display:none">
+
+
+<img src="./img/image (3).png" />
+Complétez la formule de la cellule sélectionnée, pour afficher une
+  <strong>commission de 100</strong> pour les <strong>quantités à partir de
+    50</strong>, <strong>zéro dans les autres cas</strong>.</p>
+={:SA:=SI} ( {:SA:=A2~=$A2} {:MC: =~<~<=~>~=>=~<>} 50 ; 100 ; {:SA:=0} )
+</textarea>
+
+</body>
+</html>
