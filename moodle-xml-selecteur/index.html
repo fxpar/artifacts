@@ -2,189 +2,296 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Moodle XML Filter - Catégories & Tags</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moodle Filter Native</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; max-width: 1100px; margin: 20px auto; padding: 20px; background: #f0f2f5; color: #333; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h1 { color: #f98012; border-bottom: 3px solid #f98012; padding-bottom: 10px; }
-        h2 { font-size: 1.2em; color: #555; margin-top: 0; }
-        
-        .flex-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .scroll-area { max-height: 350px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 6px; background: #fafafa; }
-        
-        .filter-item { display: flex; align-items: center; padding: 4px 0; font-size: 0.9em; border-bottom: 1px solid #eee; }
-        .filter-item:last-child { border-bottom: none; }
-        .filter-item input { margin-right: 10px; cursor: pointer; }
-        
-        .toolbar { margin-bottom: 10px; display: flex; gap: 5px; }
-        .btn-small { padding: 4px 8px; font-size: 0.75em; background: #666; color: white; border: none; border-radius: 3px; cursor: pointer; }
-        .btn-small:hover { background: #444; }
-
-        button.main-btn { background: #f98012; color: white; border: none; padding: 12px 25px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1em; transition: 0.2s; }
-        button.main-btn:hover { background: #e67300; transform: translateY(-1px); }
-        button.main-btn:disabled { background: #ccc; cursor: not-allowed; }
-        
-        .stats { margin-top: 15px; font-weight: bold; color: #0070d2; }
-        .badge { background: #e8e8e8; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; margin-left: auto; color: #555; font-weight: bold; }
-        input[type="file"] { margin-bottom: 10px; }
-        .info { font-size: 0.9em; color: #777; margin-bottom: 15px; }
+        .filter-section { max-height: 250px; overflow-y: auto; }
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        #previewContent img { max-width: 100%; height: auto; border: 1px solid #eee; margin: 10px 0; }
     </style>
 </head>
-<body>
+<body class="bg-slate-50 min-h-screen p-4 md:p-8">
 
-    <h1>Moodle XML Filter</h1>
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-6">
+            <h1 class="text-3xl font-bold text-indigo-700">Moodle XML Filter <span class="text-sm font-normal text-slate-400">Native Mode</span></h1>
+        </header>
 
-    <div class="card">
-        <h2>1. Charger le fichier</h2>
-        <input type="file" id="xmlFile" accept=".xml">
-        <button class="main-btn" onclick="analyzeXML()">Analyser le fichier</button>
-        <div id="statsInfo" class="stats"></div>
-    </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm mb-6 border border-slate-200">
+            <input type="file" id="fileInput" accept=".xml" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
+        </div>
 
-    <div id="filterSection" class="card" style="display:none;">
-        <h2>2. Configurer les filtres</h2>
-        <p class="info">Exportation : Questions appartenant aux catégories cochées <b>ET</b> possédant au moins un des tags cochés.</p>
-        
-        <div class="flex-grid">
-            <div>
-                <h3>Catégories</h3>
-                <div class="toolbar">
-                    <button class="btn-small" onclick="toggleAll('cat-checkbox', true)">Tout cocher</button>
-                    <button class="btn-small" onclick="toggleAll('cat-checkbox', false)">Tout décocher</button>
-                    <button class="btn-small" onclick="invertSelection('cat-checkbox')">Inverser</button>
+        <div id="mainContent" class="hidden">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white p-4 rounded-lg shadow border border-slate-100">
+                    <h3 class="font-bold border-b pb-2 mb-3">Catégories</h3>
+                    <div class="flex gap-1 mb-3 text-[10px]">
+                        <button onclick="batchCheck('category', true)" class="bg-slate-100 px-2 py-1 rounded">Tout</button>
+                        <button onclick="batchCheck('category', false)" class="bg-slate-100 px-2 py-1 rounded">Aucun</button>
+                        <button onclick="toggleCheck('category')" class="bg-slate-100 px-2 py-1 rounded">Inverser</button>
+                    </div>
+                    <div id="filter-category" class="filter-section custom-scroll space-y-1"></div>
                 </div>
-                <div class="scroll-area" id="categoryList"></div>
+                <div class="bg-white p-4 rounded-lg shadow border border-slate-100">
+                    <h3 class="font-bold border-b pb-2 mb-3">Tags</h3>
+                    <div class="flex gap-1 mb-3 text-[10px]">
+                        <button onclick="batchCheck('tag', true)" class="bg-slate-100 px-2 py-1 rounded">Tout</button>
+                        <button onclick="batchCheck('tag', false)" class="bg-slate-100 px-2 py-1 rounded">Aucun</button>
+                        <button onclick="toggleCheck('tag')" class="bg-slate-100 px-2 py-1 rounded">Inverser</button>
+                    </div>
+                    <div id="filter-tag" class="filter-section custom-scroll space-y-1"></div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow border border-slate-100">
+                    <h3 class="font-bold border-b pb-2 mb-3">Types</h3>
+                    <div class="flex gap-1 mb-3 text-[10px]">
+                        <button onclick="batchCheck('type', true)" class="bg-slate-100 px-2 py-1 rounded">Tout</button>
+                        <button onclick="batchCheck('type', false)" class="bg-slate-100 px-2 py-1 rounded">Aucun</button>
+                        <button onclick="toggleCheck('type')" class="bg-slate-100 px-2 py-1 rounded">Inverser</button>
+                    </div>
+                    <div id="filter-type" class="filter-section custom-scroll space-y-1"></div>
+                </div>
             </div>
 
-            <div>
-                <h3>Tags</h3>
-                <div class="toolbar">
-                    <button class="btn-small" onclick="toggleAll('tag-checkbox', true)">Tout cocher</button>
-                    <button class="btn-small" onclick="toggleAll('tag-checkbox', false)">Tout décocher</button>
-                    <button class="btn-small" onclick="invertSelection('tag-checkbox')">Inverser</button>
+            <div class="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+                <div class="bg-indigo-900 text-white p-4 flex justify-between items-center">
+                    <div class="text-sm italic">
+                        Questions : <span id="matchCount" class="font-bold">0</span> | Cochées : <span id="selectedCount" class="font-bold">0</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="batchCheckFinal(true)" class="text-[10px] bg-indigo-800 px-2 py-1 rounded">Tout cocher</button>
+                        <button onclick="batchCheckFinal(false)" class="text-[10px] bg-indigo-800 px-2 py-1 rounded">Tout décocher</button>
+                        <button onclick="exportXML()" class="bg-emerald-500 px-4 py-1 rounded text-xs font-bold shadow-sm">Exporter XML</button>
+                    </div>
                 </div>
-                <div class="scroll-area" id="tagList"></div>
+                <div id="questionList" class="divide-y max-h-[400px] overflow-y-auto custom-scroll"></div>
             </div>
         </div>
-        
-        <div style="margin-top: 30px; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
-            <button class="main-btn" onclick="generateFilteredXML()">Générer & Télécharger le XML Filtré</button>
+    </div>
+
+    <div id="previewModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl">
+            <div id="previewContent" class="p-8 overflow-y-auto"></div>
+            <div class="p-4 border-t text-right bg-slate-50 rounded-b-2xl">
+                <button onclick="closePreview()" class="bg-white border border-slate-200 px-8 py-2 rounded-xl font-bold">Fermer</button>
+            </div>
         </div>
     </div>
 
     <script>
-        let questionsData = []; 
-        let allCategories = new Set();
-        let allTags = new Set();
+        let questionsData = [];
+        let filters = { category: new Set(), tag: new Set(), type: new Set() };
+        let selectedIds = new Set();
 
-        async function analyzeXML() {
-            const fileInput = document.getElementById('xmlFile');
-            if (!fileInput.files[0]) return alert("Veuillez choisir un fichier.");
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(evt.target.result, "text/xml");
+                processXML(xmlDoc);
+            };
+            reader.readAsText(file);
+        });
 
-            const text = await fileInput.files[0].text();
-            const parser = new DOMParser();
-            const originalDoc = parser.parseFromString(text, "text/xml");
-
-            const quizNode = originalDoc.querySelector('quiz');
-            if (!quizNode) return alert("Fichier XML Moodle invalide.");
-
+        function processXML(xmlDoc) {
+            const nodes = xmlDoc.querySelectorAll("quiz > question");
             questionsData = [];
-            allCategories.clear();
-            allTags.clear();
+            let currentCat = "Top";
 
-            let currentCategory = "Par défaut";
-            const children = Array.from(quizNode.children);
-
-            children.forEach(node => {
-                if (node.nodeName === "question") {
-                    const type = node.getAttribute("type");
-                    if (type === "category") {
-                        currentCategory = node.querySelector("category text").textContent;
-                        allCategories.add(currentCategory);
-                    } else {
-                        const tags = Array.from(node.querySelectorAll("tags tag text")).map(t => t.textContent);
-                        tags.forEach(t => allTags.add(t));
-                        questionsData.push({
-                            node: node.cloneNode(true),
-                            category: currentCategory,
-                            tags: tags
-                        });
-                    }
+            nodes.forEach((node, index) => {
+                const type = node.getAttribute("type");
+                if (type === "category") {
+                    currentCat = node.querySelector("category text").textContent;
+                    return;
                 }
+                
+                let tags = Array.from(node.querySelectorAll("tags tag text")).map(t => t.textContent);
+                questionsData.push({
+                    id: index,
+                    name: node.querySelector("name text")?.textContent || "Sans nom",
+                    type: type,
+                    category: currentCat,
+                    tags: tags,
+                    node: node // On garde le noeud XML original !
+                });
             });
 
-            displayFilters();
-            document.getElementById('filterSection').style.display = 'block';
-            document.getElementById('statsInfo').textContent = `${questionsData.length} questions analysées.`;
+            document.getElementById('mainContent').classList.remove('hidden');
+            renderFilterBoxes();
+            updateAll();
         }
 
-        function displayFilters() {
-            const catContainer = document.getElementById('categoryList');
-            const tagContainer = document.getElementById('tagList');
-            catContainer.innerHTML = "";
-            tagContainer.innerHTML = "";
-
-            Array.from(allCategories).sort().forEach(cat => {
-                const count = questionsData.filter(q => q.category === cat).length;
-                catContainer.innerHTML += `
-                    <div class="filter-item">
-                        <input type="checkbox" class="cat-checkbox" value="${cat}" checked>
-                        <span>${cat}</span> <span class="badge">${count}</span>
-                    </div>`;
+        function renderFilterBoxes() {
+            const counts = { category: {}, tag: {}, type: {} };
+            questionsData.forEach(q => {
+                counts.category[q.category] = (counts.category[q.category] || 0) + 1;
+                counts.type[q.type] = (counts.type[q.type] || 0) + 1;
+                q.tags.forEach(t => counts.tag[t] = (counts.tag[t] || 0) + 1);
             });
 
-            Array.from(allTags).sort().forEach(tag => {
-                const count = questionsData.filter(q => q.tags.includes(tag)).length;
-                tagContainer.innerHTML += `
-                    <div class="filter-item">
-                        <input type="checkbox" class="tag-checkbox" value="${tag}" checked>
-                        <span>${tag}</span> <span class="badge">${count}</span>
-                    </div>`;
+            ['category', 'tag', 'type'].forEach(f => {
+                const container = document.getElementById(`filter-${f}`);
+                container.innerHTML = '';
+                Object.keys(counts[f]).sort().forEach(key => {
+                    filters[f].add(key);
+                    const div = document.createElement('div');
+                    div.className = "flex items-start p-1 hover:bg-slate-50 rounded text-xs";
+                    div.innerHTML = `<input type="checkbox" checked onchange="updateFilter('${f}','${key}',this.checked)" class="mt-1 mr-2 flex-shrink-0">
+                                     <label class="flex-1 break-words leading-tight">${key} <span class="text-indigo-400 font-bold">(${counts[f][key]})</span></label>`;
+                    container.appendChild(div);
+                });
             });
         }
 
-        // --- Fonctions de sélection de masse ---
-        function toggleAll(className, state) {
-            document.querySelectorAll('.' + className).forEach(cb => cb.checked = state);
+        function updateFilter(f, v, c) { if(c) filters[f].add(v); else filters[f].delete(v); updateAll(); }
+
+        function batchCheck(f, s) {
+    // Cocher visuellement
+    const checkboxes = document.querySelectorAll(`#filter-${f} input`);
+    checkboxes.forEach(i => {
+        i.checked = s;
+        if (s) filters[f].add(i.nextElementSibling.innerText.split(' (')[0].trim());
+        else filters[f].delete(i.nextElementSibling.innerText.split(' (')[0].trim());
+    });
+    updateAll();
+}
+
+function toggleCheck(f) {
+    const checkboxes = document.querySelectorAll(`#filter-${f} input`);
+    checkboxes.forEach(i => {
+        i.checked = !i.checked;
+        const val = i.nextElementSibling.innerText.split(' (')[0].trim();
+        if (i.checked) filters[f].add(val);
+        else filters[f].delete(val);
+    });
+    updateAll();
+}
+
+        function updateAll() {
+    const filtered = questionsData.filter(q => {
+        const catMatch = filters.category.has(q.category);
+        const typeMatch = filters.type.has(q.type);
+        
+        // Logique Tag : 
+        // 1. Si la question n'a pas de tags, on l'affiche (si cat/type correspondent)
+        // 2. Si elle a des tags, au moins un doit être dans le set 'filters.tag'
+        const tagMatch = q.tags.length === 0 || q.tags.some(t => filters.tag.has(t));
+        
+        return catMatch && typeMatch && tagMatch;
+    });
+
+    // On synchronise les IDs sélectionnés pour l'export
+    selectedIds = new Set(filtered.map(q => q.id));
+    renderList(filtered);
+}
+
+        function renderList(filtered) {
+            document.getElementById('matchCount').innerText = filtered.length;
+            document.getElementById('selectedCount').innerText = selectedIds.size;
+            const container = document.getElementById('questionList');
+            container.innerHTML = filtered.map(q => `
+                <div class="flex items-center p-3 hover:bg-indigo-50 group transition">
+                    <input type="checkbox" ${selectedIds.has(q.id) ? 'checked' : ''} onchange="toggleFinal(${q.id}, this.checked)" class="h-4 w-4">
+                    <div class="ml-4 flex-1 truncate"><div class="text-sm font-bold text-slate-700">${q.name}</div><div class="text-[10px] text-slate-400 uppercase">${q.type} | ${q.category}</div></div>
+                    <button onclick="preview(${q.id})" class="opacity-0 group-hover:opacity-100 p-2 bg-white border rounded shadow-sm">🔍</button>
+                </div>`).join('');
         }
 
-        function invertSelection(className) {
-            document.querySelectorAll('.' + className).forEach(cb => cb.checked = !cb.checked);
+        function toggleFinal(id, c) { if(c) selectedIds.add(id); else selectedIds.delete(id); document.getElementById('selectedCount').innerText = selectedIds.size; }
+        
+        function batchCheckFinal(state) {
+    // 1. Identifier quelles questions sont actuellement visibles (filtrées)
+    const filtered = questionsData.filter(q => 
+        filters.category.has(q.category) && 
+        filters.type.has(q.type) && 
+        (q.tags.length === 0 || q.tags.some(t => filters.tag.has(t)))
+    );
+
+    // 2. Mettre à jour l'ensemble des IDs sélectionnés
+    filtered.forEach(q => {
+        if (state) selectedIds.add(q.id);
+        else selectedIds.delete(q.id);
+    });
+
+    // 3. Rafraîchir l'affichage pour cocher/décocher les cases visuellement
+    renderList(filtered);
+}
+
+        function preview(id) {
+            const q = questionsData.find(x => x.id === id);
+            const node = q.node;
+            
+            const getTxt = (selector, parent = node) => {
+                const el = parent.querySelector(selector);
+                if(!el) return "";
+                let txt = el.querySelector("text")?.textContent || el.textContent;
+                // Gestion images native
+                const files = el.querySelectorAll("file");
+                files.forEach(f => {
+                    txt = txt.replace(`@@PLUGINFILE@@/${f.getAttribute("name")}`, `data:image/png;base64,${f.textContent}`);
+                });
+                return txt;
+            };
+
+            let h = `<h2 class="text-xl font-bold mb-4 border-b pb-2">${q.name}</h2>`;
+            h += `<div class="mb-6 text-lg">${getTxt("questiontext")}</div>`;
+
+            // Subquestions (Matching)
+            const subs = node.querySelectorAll("subquestion");
+            if(subs.length > 0) {
+                h += `<div class="space-y-2">` + Array.from(subs).map(s => `
+                    <div class="p-3 bg-indigo-50 rounded flex justify-between items-center border border-indigo-100">
+                        <span class="text-sm">${getTxt("text", s)}</span>
+                        <span class="font-bold text-indigo-900 ml-4">➔ ${s.querySelector("answer text")?.textContent}</span>
+                    </div>`).join('') + `</div>`;
+            } 
+            // Answers
+            else {
+                const ans = node.querySelectorAll("answer");
+                if(ans.length > 0) {
+                    h += `<div class="grid gap-2">` + Array.from(ans).map(a => `
+                        <div class="p-3 rounded-lg border ${parseFloat(a.getAttribute("fraction")) > 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-100'}">
+                            <span class="mr-2">${parseFloat(a.getAttribute("fraction")) > 0 ? '✅' : '⚪'}</span>
+                            <span class="text-sm">${getTxt("text", a)}</span>
+                        </div>`).join('') + `</div>`;
+                }
+            }
+
+            document.getElementById('previewContent').innerHTML = h;
+            document.getElementById('previewModal').classList.remove('hidden');
         }
 
-        function generateFilteredXML() {
-            const selectedCats = Array.from(document.querySelectorAll('.cat-checkbox:checked')).map(cb => cb.value);
-            const selectedTags = Array.from(document.querySelectorAll('.tag-checkbox:checked')).map(cb => cb.value);
+        function closePreview() { document.getElementById('previewModal').classList.add('hidden'); }
 
-            if (selectedCats.length === 0) return alert("Veuillez cocher au moins une catégorie.");
+        function exportXML() {
+            const selectedQuestions = questionsData.filter(q => selectedIds.has(q.id));
+            if (selectedQuestions.length === 0) return alert("Sélectionnez au moins une question.");
 
             const newDoc = document.implementation.createDocument("", "quiz", null);
             const root = newDoc.documentElement;
-            let lastAddedCategory = "";
+            let lastCat = "";
 
-            questionsData.forEach(q => {
-                const catMatch = selectedCats.includes(q.category);
-                // Si aucun tag n'est sélectionné, on considère qu'on ne filtre pas par tag (on prend tout)
-                const tagMatch = selectedTags.length === 0 || q.tags.some(t => selectedTags.includes(t));
-
-                if (catMatch && tagMatch) {
-                    if (q.category !== lastAddedCategory) {
-                        const catNode = newDoc.createElement("question");
-                        catNode.setAttribute("type", "category");
-                        const catText = newDoc.createElement("category");
-                        const txt = newDoc.createElement("text");
-                        txt.textContent = q.category;
-                        catText.appendChild(txt);
-                        catNode.appendChild(catText);
-                        root.appendChild(catNode);
-                        lastAddedCategory = q.category;
-                    }
-                    root.appendChild(newDoc.importNode(q.node, true));
+            selectedQuestions.forEach(q => {
+                if (q.category !== lastCat) {
+                    const catNode = newDoc.createElement("question");
+                    catNode.setAttribute("type", "category");
+                    const catContent = newDoc.createElement("category");
+                    const catText = newDoc.createElement("text");
+                    catText.textContent = q.category;
+                    catContent.appendChild(catText);
+                    catNode.appendChild(catContent);
+                    root.appendChild(catNode);
+                    lastCat = q.category;
                 }
+                root.appendChild(newDoc.importNode(q.node, true));
             });
 
             const serializer = new XMLSerializer();
             const xmlString = '<?xml version="1.0" encoding="UTF-8"?>\n' + serializer.serializeToString(newDoc);
+            
             const blob = new Blob([xmlString], { type: 'text/xml' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
