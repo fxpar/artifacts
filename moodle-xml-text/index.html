@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extracteur Moodle XML Universel</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 1000px; margin: 0 auto; padding: 20px; background-color: #f4f7f9; }
+        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        h1 { color: #2c3e50; border-bottom: 3px solid #4a90e2; padding-bottom: 10px; }
+        .upload-section { border: 2px dashed #4a90e2; padding: 40px; text-align: center; border-radius: 12px; background: #f0f7ff; cursor: pointer; margin-bottom: 20px; }
+        #fileInput { display: none; }
+        .btn-download { background: #27ae60; color: white; border: none; padding: 12px 25px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1rem; margin-bottom: 15px; }
+        .btn-download:disabled { background: #bdc3c7; }
+        #output { width: 100%; height: 500px; margin-top: 10px; border: 1px solid #ddd; padding: 15px; font-family: 'Consolas', monospace; font-size: 13px; white-space: pre-wrap; overflow-y: auto; background: #fff; }
+        .info-tag { font-size: 0.85em; color: #7f8c8d; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🎯 Extracteur Moodle pour IA (V3)</h1>
+    <p>Cette version supporte les questions classiques, les formats <strong>Cloze</strong> et les <strong>Sous-questions</strong> (Matching/Vrai-Faux multiples).</p>
+    
+    <div class="upload-section" onclick="document.getElementById('fileInput').click()">
+        <strong>Sélectionnez votre fichier XML Moodle</strong>
+        <p>Traitement local sécurisé</p>
+        <input type="file" id="fileInput" accept=".xml">
+    </div>
+
+    <button id="downloadBtn" class="btn-download" disabled>📥 Télécharger le texte pour l'IA</button>
+    <div id="stats" class="info-tag"></div>
+
+    <textarea id="output" placeholder="Le contenu extrait s'affichera ici après le chargement..."></textarea>
+</div>
+
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const output = document.getElementById('output');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const stats = document.getElementById('stats');
+
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (ev) => processXML(ev.target.result);
+            reader.readAsText(file);
+        }
+    });
+
+    function cleanHTML(html) {
+        if (!html) return "";
+        // Suppression des images
+        let text = html.replace(/<img[^>]*>/g, "");
+        // Extraction du texte brut
+        const temp = document.createElement("div");
+        temp.innerHTML = text;
+        return (temp.textContent || temp.innerText || "").trim();
+    }
+
+    function processCloze(text) {
+        // Gère les {1:SHORTANSWER:=BonneReponse~Mauvaise}
+        return text.replace(/\{[^{}]*\}/g, (match) => {
+            const correct = match.match(/(=|%100%)([^~#}]*)/);
+            return correct ? `[${correct[2].trim()}]` : "[...]";
+        });
+    }
+
+    function processXML(xmlString) {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+        const questions = xmlDoc.querySelectorAll("question");
+        
+        let finalOutput = "EXTRACTION PÉDAGOGIQUE POUR GÉNÉRATION DE COURS\n";
+        finalOutput += "================================================\n\n";
+
+        let qCount = 0;
+
+        questions.forEach((q) => {
+            const type = q.getAttribute("type");
+            if (type === "category") return;
+            qCount++;
+
+            // 1. Tags & Niveaux
+            let tags = [];
+            q.querySelectorAll("tags tag").forEach(t => tags.push(t.textContent.trim()));
+            const tagStr = tags.length > 0 ? tags.join(", ") : "Standard";
+
+            // 2. Énoncé principal
+            const name = q.querySelector("name text")?.textContent || "Sans nom";
+            let body = q.querySelector("questiontext text")?.textContent || "";
+            body = processCloze(cleanHTML(body));
+
+            finalOutput += `QUESTION #${qCount} (Type: ${type})\n`;
+            finalOutput += `NIVEAU/TAGS: ${tagStr}\n`;
+            finalOutput += `TITRE: ${name.trim()}\n`;
+            finalOutput += `ÉNONCÉ: ${body}\n`;
+
+            // 3. Gestion des Sous-questions (Matching / Vrai-Faux groupés)
+            const subquestions = q.querySelectorAll("subquestion");
+            if (subquestions.length > 0) {
+                finalOutput += `SOUS-POINTS ET RÉPONSES :\n`;
+                subquestions.forEach((sub, idx) => {
+                    const subText = cleanHTML(sub.querySelector("text")?.textContent || "");
+                    const subAns = cleanHTML(sub.querySelector("answer text")?.textContent || "");
+                    if (subText || subAns) {
+                        finalOutput += `   ${idx + 1}. ${subText} -> RÉPONSE: ${subAns}\n`;
+                    }
+                });
+            }
+
+            // 4. Réponses classiques (pour MCQs, etc.)
+            const answers = q.querySelectorAll("answer");
+            if (subquestions.length === 0 && answers.length > 0) {
+                finalOutput += `PROPOSITIONS VALIDES :\n`;
+                answers.forEach(ans => {
+                    const fraction = parseFloat(ans.getAttribute("fraction") || "0");
+                    if (fraction > 0) {
+                        const ansTxt = cleanHTML(ans.querySelector("text")?.textContent || "");
+                        finalOutput += `   - ${ansTxt}\n`;
+                    }
+                });
+            }
+
+            finalOutput += "\n" + "-".repeat(40) + "\n\n";
+        });
+
+        output.value = finalOutput;
+        stats.innerText = `${qCount} questions analysées.`;
+        downloadBtn.disabled = false;
+
+        downloadBtn.onclick = () => {
+            const blob = new Blob([finalOutput], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = "moodle_extraction_complete.txt"; a.click();
+        };
+    }
+</script>
+
+</body>
+</html>
