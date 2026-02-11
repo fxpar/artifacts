@@ -13,9 +13,14 @@ Artefacts (petits outils) créés par IA pour différentes utilités
 
 ## Moodle
 
-- [Sélecteur questions moodle par catégorie et tag](moodle-xml-selecteur): Obtenir questions moodle filtré sur certaines catégories et certains tags à partir d'un grand fichier de questions
+- [Sélecteur questions moodle par catégorie et tag](moodle-xml-selecteur): Obtenir les questions moodle filtrées sur certaines catégories et certains tags et certains types, à partir d'un grand fichier de questions. Inclus une prévisualisation des questions.
 - [Moodle cloze en html:](moodle-cloze-html)Convertit les questions cloze de moodle en question accessible sur une page web hors moodle. (Utile pour les écoles qui n'ont pas de plateforme).
 - [moodle-xml-traduction:](moodle-xml-traduction)(imparfait) Permet d'avoir un fichier de questions allégé (sans les images) pour le faire traduire par une IA et le réinjecter dans moodle. (il y a des erreurs qui bloquent lors du réimport... impossible de voir pourquoi).
+- [moodle-xml-text](moodle-xml-text): Extrait le maximum de texte du fichier d'une banque de question. Utilité: permet de donner les questions à une IA qui va construire le support de cours correspondant aux évaluations
+
+## Blackboard
+
+- [moodle-cloze-blackboard-fill-blank](moodle-cloze-blackboard-fill-blank): Convertit un fichier xml de questions cloze moodle en questions "FIB" (Texte à trou, fill in the blank) de Blackboard. Le résultat n'est pas un fichier d'import, mais le texte de la question à copier-coller (en texte brut Ctrl+maj+V) dans les questions FIB, qui est parfaitement traité en faisant "étape suivante" (next step) dans blackboard.
 
 ## Chinois
 
