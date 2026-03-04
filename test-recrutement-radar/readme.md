@@ -27,7 +27,7 @@ Exemple:
 * le remplissage de l'évaluation
 * la création du graphique
 
-##### Partie non traitées
+#### Partie non traitées
 * la sécurité
 * le déploiement
 * le stockage réél
@@ -50,6 +50,7 @@ L'étudiant.e maîtrise le vocabulaire pour définir ces parties de gestion de p
 * Intégre le code sur plusieurs réponses à la suite par copier-coller corrects
 * Test régulièrement le code fourni
 * Conserve les versions de développement
+
 
 
 
