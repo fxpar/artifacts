@@ -34,3 +34,4 @@ Artefacts (petits outils) créés par IA pour différentes utilités
 - [tableau-excel-word-html](tableau-excel-word-html): convertit des tableaux Excel ou Word en html, en choisissant des paramètres: ajouter les numéros de ligne et lettre des colonne, conserver les formats, les symboles monétaires...
 - [tableaux-excel-word-markdown-json-csv](tableaux-excel-word-markdown-json-csv): permet de transformer différents tableaux Excel / Word en markdown, csv ou json
 - [markdown-html](markdown-html): Convertit du markdown en html: attention, beaucoup de caractères sont transformé en entité (l'apostrophe et les accents sont convertis pour avoir un format html strict)
+- [test-recrutement-radar](test-recrutement-radar): Crée un graphique radar à partir d'un référentiel d'évaluation et de tests d'évaluation
