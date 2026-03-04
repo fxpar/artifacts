@@ -2,6 +2,8 @@
 
 POC: outil d'évaluation. Exemple de projet à faire créer à des RH pour voir le niveau de maîtrise en pilotage d'IA.
 
+[👉 DEMO](https://fxpar.github.io/artifacts/test-recrutement-radar/test-IA.html)
+
 Fonctionalité :
 
 1. charger plusieurs évaluation (dimensions et items)
@@ -48,6 +50,7 @@ L'étudiant.e maîtrise le vocabulaire pour définir ces parties de gestion de p
 * Intégre le code sur plusieurs réponses à la suite par copier-coller corrects
 * Test régulièrement le code fourni
 * Conserve les versions de développement
+
 
 
 
