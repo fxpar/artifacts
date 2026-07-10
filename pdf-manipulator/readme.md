@@ -22,6 +22,8 @@ Ce dépôt contient un ensemble de scripts Python conçus pour automatiser et si
 
 * **Exemple de syntaxe:** La formule 15,3,5-8,10 créera un fichier pdf avec les pages 15,3,5,6,7,8 et 10. Le trait d'union veut dire "jusqu'à".
 
+* **Le petit + :** Contrairement à d'autre librairies, ce script ne tient pas compte de la "restriction admin" qui parfois bloque l'extraction. (Ce contournement du mot de passe ne s'applque qu'au mot de passe "propriétaire", pas au mot de passe utilisateur).
+
 ### 3. `json-pdf-sommaires.py`
 
 * **Son utilité :** Une interface graphique dédiée à la préparation de vos documents. En chargeant le fichier `JSON` généré par le premier script, il vous liste tous les PDF qui n'ont pas de signets.
