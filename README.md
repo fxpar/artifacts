@@ -38,8 +38,8 @@ Artefacts (petits outils) créés par IA pour différentes utilités
 
 ## 🎵 Outils d'Indexation pour Songbooks & PDF
 
-Ce dossier contient un ensemble de scripts Python conçus pour automatiser et simplifier la gestion, l'extraction de sommaires et l'injection de signets (index) dans des fichiers PDF volumineux, particulièrement adaptés aux recueils de partitions de musique (*songbooks*).
+Le dossier [pdf-manipulator](https://github.com/fxpar/abc-notation-artifacts) contient un ensemble de scripts Python conçus pour automatiser et simplifier la gestion, l'extraction de sommaires et l'injection de signets (index) dans des fichiers PDF volumineux, particulièrement adaptés aux recueils de partitions de musique (*songbooks*).
 
 ## Autre artefacts musicaux
 
-Le répertoire https://github.com/fxpar/abc-notation-artifacts contient des minis applis liées à la musique en notation abc, qui est un langage ultra simple (texte) pour composer des partitions de simple à complexe et entendre ce que cela donne. Notamment très utile pour rapidement créé une boucle d'accord sur laquelle improviser.
+Le répertoire [abc-notation-artifacts](https://github.com/fxpar/abc-notation-artifacts) contient des minis applis liées à la musique en notation abc, qui est un langage ultra simple (texte) pour composer des partitions de simple à complexe et entendre ce que cela donne. Notamment très utile pour rapidement créé une boucle d'accord sur laquelle improviser.
