@@ -35,3 +35,11 @@ Artefacts (petits outils) créés par IA pour différentes utilités
 - [tableaux-excel-word-markdown-json-csv](tableaux-excel-word-markdown-json-csv): permet de transformer différents tableaux Excel / Word en markdown, csv ou json
 - [markdown-html](markdown-html): Convertit du markdown en html: attention, beaucoup de caractères sont transformé en entité (l'apostrophe et les accents sont convertis pour avoir un format html strict)
 - [test-recrutement-radar](test-recrutement-radar): Crée un graphique radar à partir d'un référentiel d'évaluation et de tests d'évaluation
+
+## 🎵 Outils d'Indexation pour Songbooks & PDF
+
+Ce dossier contient un ensemble de scripts Python conçus pour automatiser et simplifier la gestion, l'extraction de sommaires et l'injection de signets (index) dans des fichiers PDF volumineux, particulièrement adaptés aux recueils de partitions de musique (*songbooks*).
+
+## Autre artefacts musicaux
+
+Le répertoire https://github.com/fxpar/abc-notation-artifacts contient des minis applis liées à la musique en notation abc, qui est un langage ultra simple (texte) pour composer des partitions de simple à complexe et entendre ce que cela donne. Notamment très utile pour rapidement créé une boucle d'accord sur laquelle improviser.
