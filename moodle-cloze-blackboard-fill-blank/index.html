@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Préparateur Blackboard Ultra</title>
+    <style>
+        body { font-family: sans-serif; max-width: 900px; margin: 20px auto; background: #eee; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .question-box { background: #f9f9f9; border: 1px solid #ccc; padding: 15px; margin: 10px 0; position: relative; white-space: pre-wrap; font-family: monospace; }
+        .copy-btn { position: absolute; top: 5px; right: 5px; background: #3498db; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; }
+        .type-tag { display: inline-block; padding: 2px 8px; background: #2ecc71; color: white; border-radius: 10px; font-size: 0.8em; margin-bottom: 5px; }
+        textarea { width: 100%; height: 150px; display: none; }
+        #drop-zone { border: 2px dashed #3498db; padding: 30px; text-align: center; cursor: pointer; background: #ebf5fb; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>Préparateur de Copier-Coller pour Blackboard</h1>
+    <p>Glissez votre XML Moodle. Le script va nettoyer le code et mettre les bonnes réponses entre crochets <code>[ ]</code>.</p>
+    <div id="drop-zone">Glissez le fichier XML ici ou cliquez pour ouvrir</div>
+    <input type="file" id="file-input" style="display:none" accept=".xml">
+</div>
+
+<div id="results"></div>
+
+<script>
+    const fileInput = document.getElementById('file-input');
+    const dropZone = document.getElementById('drop-zone');
+    const results = document.getElementById('results');
+
+    dropZone.onclick = () => fileInput.click();
+    fileInput.onchange = (e) => handleFile(e.target.files[0]);
+
+    function handleFile(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => processXML(e.target.result);
+        reader.readAsText(file);
+    }
+
+    function decodeHTMLEntities(text) {
+        const textArea = document.createElement('textarea');
+        textArea.innerHTML = text;
+        return textArea.value;
+    }
+
+    // ... (reste du code HTML/CSS identique)
+
+    function processXML(xmlContent) {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlContent, "text/xml");
+        const questions = xmlDoc.getElementsByTagName("question");
+        results.innerHTML = "";
+
+        for (let i = 0; i < questions.length; i++) {
+            const type = questions[i].getAttribute("type");
+            if (type !== "cloze") continue;
+
+            const qTextElem = questions[i].getElementsByTagName("questiontext")[0];
+            if (!qTextElem) continue;
+
+            let rawText = qTextElem.getElementsByTagName("text")[0].textContent;
+            let decodedText = decodeHTMLEntities(rawText);
+            
+            // 1. Gestion des SHORTANSWER (SA) -> [Réponse]
+            let processed = decodedText.replace(/\{(?:\d+)?(?::)?(?:SA|SHORTANSWER|MW|NM):=(.*?)\}/g, (match, content) => {
+                let firstAnswer = content.split('~')[0].split('}')[0].trim();
+                return `[${firstAnswer}]`;
+            });
+
+            // 2. Gestion des MULTICHOICE (MC/MCS/MCV/MCH) 
+            // On ne garde QUE la bonne réponse (celle commençant par = ou contenant %100%)
+            processed = processed.replace(/\{(?:\d+)?(?::)?(?:MC|MULTICHOICE|MCS|MCV|MCH):([^}]+)\}/g, (match, content) => {
+                let options = content.split('~');
+                let correctOption = "";
+                
+                for (let opt of options) {
+                    let clean = opt.trim();
+                    if (clean.startsWith('=') || clean.includes('%100%')) {
+                        // On nettoie les marqueurs Moodle pour ne garder que le texte de la réponse
+                        correctOption = clean.replace(/^=/, '').replace(/%100%/, '').trim();
+                        break; 
+                    }
+                }
+                
+                // Si aucune réponse n'a de '=' (rare), on prend la première par défaut
+                if (correctOption === "" && options.length > 0) {
+                    correctOption = options[0].trim();
+                }
+
+                return `[${correctOption}]`;
+            });
+
+            // 3. Nettoyage final du HTML pour Blackboard
+            // On préserve les sauts de ligne du code VBA
+            processed = processed.replace(/<br\s*\/?>/gi, '\n');
+            // On retire les autres balises (strong, etc.)
+            processed = processed.replace(/<[^>]*>?/gm, '');
+            // On s'assure que les entités résiduelles sont traitées
+            processed = processed.replace(/&nbsp;/g, ' ');
+            processed = processed.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+
+            renderQuestion(processed);
+        }
+    }
+
+// ... (reste du script identique)
+
+    function renderQuestion(text) {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerHTML = `
+            <div class="type-tag">Prêt pour Blackboard</div>
+            <button class="copy-btn" onclick="copyToClipboard(this)">Copier</button>
+            <div class="question-box">${text.trim()}</div>
+        `;
+        results.appendChild(div);
+    }
+
+    function copyToClipboard(btn) {
+        const text = btn.nextElementSibling.innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            const originalText = btn.innerText;
+            btn.innerText = "Copié !";
+            btn.style.background = "#2ecc71";
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.background = "#3498db";
+            }, 2000);
+        });
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,216 @@
+{
+  "referentiel_nom": "Évaluation Posture Leader-IA",
+  "version": "1.0",
+  "dimensions": [
+    	{
+      "id": "dim_01",
+      "titre": "Clarté Intérieure",
+      "description": "Le candidat sait ce qu'il veut avant de le demander",
+      "items": [
+        {
+          "label": "Précision de l'intention initiale",
+          "extremes": {
+            "min": "Formule des demandes vagues, change d'avis en voyant la réponse",
+            "max": "Formule une intention précise avant même d'ouvrir l'outil"
+          }
+        },
+        {
+          "label": "Anticipation du besoin",
+          "extremes": {
+            "min": "Découvre son besoin dans l'interaction",
+            "max": "A anticipé les contours de ce qu'il cherche"
+          }
+        },
+        {
+          "label": "Distinction objectif vs capacité",
+          "extremes": {
+            "min": "Confond 'ce que l'IA peut faire' et 'ce dont j'ai besoin'",
+            "max": "Distingue clairement son objectif des capacités de l'outil"
+          }
+        }
+      ]
+    },
+	{
+      "id": "dim_02",
+      "titre": "Autorité Légitime",
+      "description": "Le candidat se positionne comme le pilote, pas comme l'exécutant",
+      "items": [
+        {
+          "label": "Mode de formulation des demandes",
+          "extremes": {
+            "min": "Supplication ('est-ce que tu pourrais peut-être...')",
+            "max": "Directive ('voici ce dont j'ai besoin')"
+          }
+        },
+        {
+          "label": "Exigence de précision",
+          "extremes": {
+            "min": "Accepte des réponses génériques sans exiger d'adaptation",
+            "max": "Recadre, exige, précise jusqu'à obtenir satisfaction"
+          }
+        },
+        {
+          "label": "Contrôle stratégique",
+          "extremes": {
+            "min": "S'efface devant les propositions de l'IA",
+            "max": "Garde la main sur les choix stratégiques"
+          }
+        }
+      ]
+    },
+    {
+      "id": "dim_03",
+      "titre": "Gestion de la Frustration et des Échecs",
+      "description": "Le candidat a une relation mature avec l'erreur et l'itération",
+      "items": [
+        {
+          "label": "Réaction face à l'erreur",
+          "extremes": {
+            "min": "Blâme l'outil, s'énerve ou abandonne",
+            "max": "Analyse ce qui n'a pas fonctionné dans sa propre méthode"
+          }
+        }
+      ]
+    },
+    {
+      "id": "dim_04",
+      "titre": "Maîtrise des Outils de Communication",
+      "description": "Le candidat sait structurer sa pensée pour être compris",
+      "items": [
+        {
+          "label": "Structure de la pensée",
+          "extremes": {
+            "min": "Langage oral, linéaire, peu structuré",
+            "max": "Utilise des listes, titres et séparateurs pour organiser"
+          }
+        },
+        {
+          "label": "Définition du format",
+          "extremes": {
+            "min": "Ne sait pas donner de format de sortie",
+            "max": "Précise le format (tableau, synthèse, plan)"
+          }
+        },
+        {
+          "label": "Contextualisation",
+          "extremes": {
+            "min": "Oublie de contextualiser",
+            "max": "Donne un rôle, un contexte et des contraintes"
+          }
+        }
+      ]
+    },
+    {
+      "id": "dim_05",
+      "titre": "Pilotage Émotionnel",
+      "description": "Le candidat utilise l'intelligence émotionnelle comme levier",
+      "items": [
+        {
+          "label": "Gestion des états internes",
+          "extremes": {
+            "min": "Ignore ou refoule ses émotions",
+            "max": "Nomme son état ('perdu', 'pressé') pour guider l'IA"
+          }
+        },
+        {
+          "label": "Réaction à la déception",
+          "extremes": {
+            "min": "Agressif ou passif face à un mauvais résultat",
+            "max": "Recadre calmement, critique le processus, pas le résultat"
+          }
+        },
+        {
+          "label": "Sensibilité au dialogue",
+          "extremes": {
+            "min": "Ne perçoit pas quand le dialogue se ferme",
+            "max": "Ajuste son ton aux signaux de 'protection' de l'IA"
+          }
+        }
+      ]
+    },
+    {
+      "id": "dim_06",
+      "titre": "Appropriation du Style",
+      "description": "Le candidat sait transmettre sa voix et l'identité de son entreprise",
+      "items": [
+        {
+          "label": "Façonnage stylistique",
+          "extremes": {
+            "min": "Accepte le style par défaut, générique",
+            "max": "Donne des exemples, transmet sa 'patte'"
+          }
+        },
+        {
+          "label": "Techniques de personnalisation",
+          "extremes": {
+            "min": "Ne sait pas comment faire pour que ça lui ressemble",
+            "max": "Utilise des écrits existants, des métaphores"
+          }
+        },
+        {
+          "label": "Standardisation vs Singularité",
+          "extremes": {
+            "min": "Les productions restent standardisées",
+            "max": "Les productions portent la marque de son univers"
+          }
+        }
+      ]
+    },
+    {
+      "id": "dim_07",
+      "titre": "Responsabilité Sereine",
+      "description": "Le candidat sait ce qu'il délègue et ce qu'il garde",
+      "items": [
+        {
+          "label": "Conscience des limites",
+          "extremes": {
+            "min": "Ne sait pas où s'arrête sa responsabilité",
+            "max": "Conscience claire des limites de la délégation"
+          }
+        },
+        {
+          "label": "Équilibre du contrôle",
+          "extremes": {
+            "min": "Soit sur-contrôle, soit sous-contrôle total",
+            "max": "Délègue la production, garde la décision"
+          }
+        },
+        {
+          "label": "Posturer de contrôle",
+          "extremes": {
+            "min": "Contrôle vécu comme anxieux ou suspicieux",
+            "max": "Contrôle vécu comme l'exercice normal de l'expertise"
+          }
+        }
+      ]
+    },
+    {
+      "id": "dim_08",
+      "titre": "Agilité Tactique",
+      "description": "Le candidat choisit consciemment le bon mode d'interaction",
+      "items": [
+        {
+          "label": "Format de demande",
+          "extremes": {
+            "min": "Utilise toujours le même format de demande",
+            "max": "Alterne exécution, exploration et création d'outils"
+          }
+        },
+        {
+          "label": "Séquençage du dialogue",
+          "extremes": {
+            "min": "Demande directement la solution sans explorer",
+            "max": "Sait demander les options avant de choisir"
+          }
+        },
+        {
+          "label": "Réflexe 'Outil'",
+          "extremes": {
+            "min": "Ne pense pas à se faire fabriquer des outils",
+            "max": "Demande des trames, tableaux ou outils réutilisables"
+          }
+        }
+      ]
+    }
+  ]
+}

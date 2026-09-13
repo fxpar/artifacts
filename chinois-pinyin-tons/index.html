@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convertisseur Chinois vers Pinyin</title>
+    <script src="https://unpkg.com/pinyin-pro"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f7f6;
+        }
+        h1 { color: #2c3e50; text-align: center; }
+        .container {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 18px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+            background: #eef2f3;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        button:hover { background-color: #2980b9; }
+        #result {
+            margin-top: 20px;
+            padding: 20px;
+            border-left: 5px solid #3498db;
+            background: #fff;
+            min-height: 100px;
+            white-space: pre-wrap;
+            font-size: 20px;
+        }
+        .ruby-container { display: inline-block; text-align: center; margin: 5px; }
+        .ruby-pinyin { display: block; font-size: 0.6em; color: #e67e22; }
+    </style>
+</head>
+<body>
+
+    <h1>Convertisseur Hanzi ➔ Pinyin</h1>
+
+    <div class="container">
+        <textarea id="inputArea" placeholder="Collez votre texte chinois ici..."></textarea>
+
+        <div class="controls">
+            <strong>Format :</strong>
+            <label><input type="radio" name="format" value="after" checked> Après (汉[hàn])</label>
+            <label><input type="radio" name="format" value="below"> En dessous (Rubis)</label>
+            <label><input type="radio" name="format" value="end"> À la fin du texte</label>
+            <button onclick="convertir()">Convertir</button>
+        </div>
+
+        <div id="result">La conversion apparaîtra ici...</div>
+    </div>
+
+    <script>
+        function convertir() {
+            const text = document.getElementById('inputArea').value;
+            const format = document.querySelector('input[name="format"]:checked').value;
+            const resultDiv = document.getElementById('result');
+            
+            if (!text.trim()) {
+                resultDiv.innerHTML = "Veuillez entrer du texte.";
+                return;
+            }
+
+            // Utilisation de pinyin-pro
+            const { pinyin } = pinyinPro;
+
+            let output = "";
+
+            if (format === 'after') {
+                // Format: Caractère [pinyin]
+                for (let char of text) {
+                    const py = pinyin(char, { toneType: 'symbol' });
+                    // On ne met le pinyin que si c'est un caractère chinois
+                    if (/[\u4e00-\u9fa5]/.test(char)) {
+                        output += `${char}[${py}]`;
+                    } else {
+                        output += char;
+                    }
+                }
+            } 
+            else if (format === 'below') {
+                // Format HTML Ruby (très propre pour l'apprentissage)
+                for (let char of text) {
+                    if (/[\u4e00-\u9fa5]/.test(char)) {
+                        const py = pinyin(char, { toneType: 'symbol' });
+                        output += `<ruby>${char}<rt>${py}</rt></ruby>`;
+                    } else {
+                        output += char;
+                    }
+                }
+            } 
+            else if (format === 'end') {
+                // Format: Texte original suivi du bloc pinyin complet
+                const fullPinyin = pinyin(text, { toneType: 'symbol', nonZh: 'consecutive' });
+                output = `${text}\n\n---\n\n${fullPinyin}`;
+            }
+
+            resultDiv.innerHTML = output;
+        }
+    </script>
+
+</body>
+</html>

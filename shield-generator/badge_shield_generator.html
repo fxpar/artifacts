@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShieldForge - Générateur de Badges & Shields SVG/PNG</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        shield: {
+                            50: '#fefce8',
+                            100: '#fef9c3',
+                            500: '#eab308',
+                            600: '#ca8a04',
+                            800: '#854d0e',
+                            900: '#713f12',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome & Bootstrap Icons CSS pour la grille de sélection -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4b5563;
+        }
+        .shield-drop-shadow {
+            filter: drop-shadow(0 20px 25px rgba(0, 0, 0, 0.5));
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen font-sans flex flex-col">
+
+    <!-- Header Navigation -->
+    <header class="border-b border-gray-800 bg-gray-900/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-tr from-amber-600 to-yellow-400 p-2 rounded-xl text-gray-950 font-black shadow-lg">
+                    <i class="fa-solid fa-shield-halved text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-500 bg-clip-text text-transparent">ShieldForge</h1>
+                    <p class="text-xs text-gray-400">Créateur de badges & shields personnalisés</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <button id="btn-export-svg" class="flex items-center space-x-2 bg-gray-800 hover:bg-gray-700 text-amber-400 border border-amber-500/30 px-3 py-2 rounded-lg text-sm font-medium transition shadow-sm">
+                    <i class="fa-solid fa-file-code"></i>
+                    <span>Export SVG</span>
+                </button>
+                <button id="btn-export-png" class="flex items-center space-x-2 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-gray-950 px-4 py-2 rounded-lg text-sm font-bold shadow-lg transition transform hover:-translate-y-0.5">
+                    <i class="fa-solid fa-download"></i>
+                    <span>Exporter PNG</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- LEFT PANEL: Controls & Settings (7 cols) -->
+        <div class="lg:col-span-7 flex flex-col space-y-6">
+
+            <!-- Tabs Header -->
+            <div class="flex border-b border-gray-800 bg-gray-900/50 p-1 rounded-xl">
+                <button id="tab-icons-btn" class="tab-btn flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition bg-amber-500 text-gray-950 shadow">
+                    <i class="fa-solid fa-icons mr-2"></i>1. Icônes
+                </button>
+                <button id="tab-style-btn" class="tab-btn flex-1 py-2 px-4 rounded-lg text-sm font-semibold text-gray-400 hover:text-gray-200 transition">
+                    <i class="fa-solid fa-palette mr-2"></i>2. Presets & CSS
+                </button>
+                <button id="tab-text-btn" class="tab-btn flex-1 py-2 px-4 rounded-lg text-sm font-semibold text-gray-400 hover:text-gray-200 transition">
+                    <i class="fa-solid fa-font mr-2"></i>3. Texte & Formes
+                </button>
+            </div>
+
+            <!-- TAB 1: ICONS SELECTION -->
+            <div id="tab-icons-content" class="tab-content flex-col space-y-4">
+                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-4">
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <!-- Library selector -->
+                        <div class="sm:w-1/3">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Bibliothèque</label>
+                            <select id="icon-library-select" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-amber-500">
+                                <option value="fa">FontAwesome 6</option>
+                                <option value="bi">Bootstrap Icons</option>
+                            </select>
+                        </div>
+                        <!-- Search Bar -->
+                        <div class="sm:w-2/3">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Rechercher une icône</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-500"></i>
+                                <input type="text" id="icon-search-input" placeholder="ex: shield, crown, sword, star..." class="w-full bg-gray-800 border border-gray-700 rounded-lg pl-9 pr-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-amber-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Selected icons badges -->
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-semibold uppercase tracking-wider text-gray-400">Icônes sélectionnées (<span id="selected-count">1</span>/8)</span>
+                            <span id="layout-hint" class="text-xs text-amber-400 font-medium">Mode: Shield Simple (1 icône)</span>
+                        </div>
+                        <div id="selected-icons-container" class="flex flex-wrap gap-2 min-h-[42px] p-2 bg-gray-950/60 rounded-xl border border-gray-800/80">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Icons Grid -->
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Résultats de la recherche</label>
+                        <div id="icons-grid" class="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-64 overflow-y-auto p-1 border border-gray-800 rounded-xl bg-gray-950">
+                            <!-- Dynamically loaded icons -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: PRESETS & CSS -->
+            <div id="tab-style-content" class="tab-content hidden flex-col space-y-4">
+                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-4">
+                    
+                    <!-- Presets Selector -->
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Presets Graphiques</label>
+                        <select id="preset-select" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-amber-500">
+                            <option value="gold-blood">Or & Sang (Médiéval Faction)</option>
+                            <option value="cyberpunk">Cyberpunk 2077 (Néon & Dark)</option>
+                            <option value="steampunk">Steampunk Brass (Cuivre & Rouille)</option>
+                            <option value="royal-guard">Garde Royale (Saphir & Argent)</option>
+                            <option value="emerald-forest">Forêt d'Émeraude (Ranger / Nature)</option>
+                            <option value="minimal-dark">Minimalist Obsidian (Dark Flat)</option>
+                        </select>
+                    </div>
+
+                    <!-- CSS Editor -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-xs font-semibold uppercase tracking-wider text-gray-400">Code CSS Personnalisé (Style Direct)</label>
+                            <span class="text-xs text-gray-500">Appliqué au shield SVG</span>
+                        </div>
+                        <textarea id="custom-css-input" rows="8" class="w-full bg-gray-950 border border-gray-800 rounded-xl p-3 font-mono text-xs text-amber-300 focus:outline-none focus:border-amber-500 leading-relaxed" placeholder="/* Entrez du CSS personnalisé */"></textarea>
+                    </div>
+
+                    <!-- Save custom preset -->
+                    <div class="flex items-center gap-2 pt-2 border-t border-gray-800">
+                        <input type="text" id="custom-preset-name" placeholder="Nom de mon preset..." class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-amber-500">
+                        <button id="btn-save-preset" class="bg-gray-800 hover:bg-gray-700 text-amber-400 border border-amber-500/30 px-4 py-2 rounded-lg text-sm font-semibold transition">
+                            <i class="fa-solid fa-bookmark mr-1.5"></i> Enregistrer Preset
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- TAB 3: TEXT & SHAPES -->
+            <div id="tab-text-content" class="tab-content hidden flex-col space-y-4">
+                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-4">
+                    
+                    <!-- Choice of Shield Shape -->
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-amber-400 mb-2">Forme du Shield / Bouclier</label>
+                        <div class="grid grid-cols-3 gap-2" id="shape-selector-grid">
+                            <button data-shape="classic" class="shape-btn active p-3 rounded-xl border border-amber-500 bg-amber-500/10 flex flex-col items-center justify-center transition">
+                                <i class="fa-solid fa-shield-halved text-xl text-amber-400 mb-1"></i>
+                                <span class="text-xs font-medium">Classique</span>
+                            </button>
+                            <button data-shape="gothic" class="shape-btn p-3 rounded-xl border border-gray-800 bg-gray-950 flex flex-col items-center justify-center transition hover:border-gray-700">
+                                <i class="fa-solid fa-shield-cat text-xl text-gray-400 mb-1"></i>
+                                <span class="text-xs font-medium">Gothique</span>
+                            </button>
+                            <button data-shape="heater" class="shape-btn p-3 rounded-xl border border-gray-800 bg-gray-950 flex flex-col items-center justify-center transition hover:border-gray-700">
+                                <i class="fa-solid fa-shield text-xl text-gray-400 mb-1"></i>
+                                <span class="text-xs font-medium">Écu Français</span>
+                            </button>
+							<button data-shape="diamond" class="shape-btn p-3 rounded-xl border border-gray-800 bg-gray-950 flex flex-col items-center justify-center transition hover:border-gray-700">
+                                <i class="fa-solid fa-diamond text-xl text-gray-400 mb-1"></i>
+                                <span class="text-xs font-medium">Losange / Diamond</span>
+                            </button>
+                            <button data-shape="circle" class="shape-btn p-3 rounded-xl border border-gray-800 bg-gray-950 flex flex-col items-center justify-center transition hover:border-gray-700">
+                                <i class="fa-solid fa-circle text-xl text-gray-400 mb-1"></i>
+                                <span class="text-xs font-medium">Rond / Targe</span>
+                            </button>
+                            <button data-shape="polygon" class="shape-btn p-3 rounded-xl border border-gray-800 bg-gray-950 flex flex-col items-center justify-center transition hover:border-gray-700">
+                                <i class="fa-solid fa-diamond text-xl text-gray-400 mb-1"></i>
+                                <span class="text-xs font-medium">Octogone</span>
+                            </button>
+                            <button data-shape="badge" class="shape-btn p-3 rounded-xl border border-gray-800 bg-gray-950 flex flex-col items-center justify-center transition hover:border-gray-700">
+                                <i class="fa-solid fa-[#f59e0b] fa-bookmark text-xl text-gray-400 mb-1"></i>
+                                <span class="text-xs font-medium">Blason Droit</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <hr class="border-gray-800" />
+
+                    <!-- Icon Size Slider -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-xs font-semibold uppercase tracking-wider text-gray-400">Taille des icônes</label>
+                            <span id="icon-size-val" class="text-xs text-amber-400 font-bold">50 px</span>
+                        </div>
+                        <input type="range" id="icon-size-slider" min="20" max="100" value="50" class="w-full accent-amber-500 bg-gray-800 rounded-lg h-2 cursor-pointer">
+                    </div>
+
+                    <!-- Title & Subtitle Inputs -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Titre Principal</label>
+                            <input type="text" id="text-title" value="SHIELD" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Sous-titre / Année</label>
+                            <input type="text" id="text-subtitle" value="GUARDIAN 2026" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-amber-500">
+                        </div>
+                    </div>
+					
+					<!-- Sliders de taille du Titre et du Sous-titre -->
+					<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+						<div>
+							<div class="flex justify-between items-center mb-1">
+								<label class="text-xs font-semibold uppercase tracking-wider text-gray-400">Taille Titre</label>
+								<span id="title-size-val" class="text-xs text-amber-400 font-bold">18 px</span>
+							</div>
+							<input type="range" id="title-size-slider" min="10" max="36" value="18" class="w-full accent-amber-500 bg-gray-800 rounded-lg h-2 cursor-pointer">
+						</div>
+						<div>
+							<div class="flex justify-between items-center mb-1">
+								<label class="text-xs font-semibold uppercase tracking-wider text-gray-400">Taille Sous-Titre</label>
+								<span id="subtitle-size-val" class="text-xs text-amber-400 font-bold">11 px</span>
+							</div>
+							<input type="range" id="subtitle-size-slider" min="8" max="24" value="11" class="w-full accent-amber-500 bg-gray-800 rounded-lg h-2 cursor-pointer">
+						</div>
+					</div>
+
+                    <!-- Ribbon Style Select -->
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Style de Banderole</label>
+                        <select id="ribbon-style-select" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-amber-500">
+                            <option value="bottom">Bas (Classique)</option>
+                            <option value="top">Haut (Sommet)</option>
+                            <option value="center">Barre Centrale</option>
+                            <option value="none">Masquer la banderole</option>
+                        </select>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT PANEL: Live SVG Rendering Canvas (5 cols) -->
+        <div class="lg:col-span-5 flex flex-col">
+            <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 flex-1 flex flex-col justify-between items-center relative overflow-hidden">
+                
+                <!-- Background grid effect -->
+                <div class="absolute inset-0 bg-[linear-gradient(to_right,#1f293710_1px,transparent_1px),linear-gradient(to_bottom,#1f293710_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none"></div>
+
+                <div class="w-full flex justify-between items-center z-10 mb-4">
+                    <span class="text-xs font-bold text-gray-400 tracking-wider uppercase flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Aperçu Réactif
+                    </span>
+                    <span class="text-xs text-gray-500 font-mono">300 x 340px</span>
+                </div>
+
+                <!-- SVG Badge Render Container -->
+                <div class="flex-1 flex items-center justify-center w-full my-auto z-10 py-4">
+                    <div id="svg-render-wrapper" class="shield-drop-shadow transition-transform duration-300">
+                        <!-- Dynamic SVG Will Be Rendered Here -->
+                    </div>
+                </div>
+
+                <!-- Quick actions bottom bar -->
+                <div class="w-full pt-4 border-t border-gray-800/80 z-10 flex items-center justify-between text-xs text-gray-400">
+                    <span>Format Vectoriel SVG Native</span>
+                    <button id="btn-reset" class="hover:text-amber-400 transition flex items-center gap-1">
+                        <i class="fa-solid fa-rotate-left"></i> Réinitialiser
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- App Logic JS -->
+    <script>
+        // Preset Databases
+        const CSS_PRESETS = {
+            'gold-blood': {
+                css: `#badge-svg-element {\n  filter: drop-shadow(0 15px 25px rgba(245, 158, 11, 0.25));\n}\n.shield-base {\n  fill: url(#shieldGradGold);\n  stroke: #f59e0b;\n  stroke-width: 6px;\n}\n.badge-banner path {\n  fill: #450a0a;\n  stroke: #f59e0b;\n  stroke-width: 3px;\n}\n.badge-title {\n  fill: #ffffff;\n  font-family: sans-serif;\n  font-weight: 900;\n}\n.badge-subtitle {\n  fill: #f59e0b;\n  font-family: sans-serif;\n  font-weight: 600;\n}`,
+                grad1: '#450a0a', grad2: '#991b1b', iconColor: '#fef08a'
+            },
+            'cyberpunk': {
+                css: `#badge-svg-element {\n  filter: drop-shadow(0 0 20px rgba(6, 182, 212, 0.4));\n}\n.shield-base {\n  fill: url(#shieldGradCyber);\n  stroke: #06b6d4;\n  stroke-width: 4px;\n}\n.badge-banner path {\n  fill: #0891b2;\n  stroke: #f43f5e;\n  stroke-width: 2px;\n}\n.badge-title {\n  fill: #fef08a;\n  font-family: monospace;\n  font-weight: 800;\n}\n.badge-subtitle {\n  fill: #ffffff;\n  font-family: monospace;\n}`,
+                grad1: '#0f172a', grad2: '#1e1b4b', iconColor: '#22d3ee'
+            },
+            'steampunk': {
+                css: `#badge-svg-element {\n  filter: drop-shadow(0 10px 15px rgba(180, 83, 9, 0.3));\n}\n.shield-base {\n  fill: url(#shieldGradSteam);\n  stroke: #d97706;\n  stroke-width: 7px;\n}\n.badge-banner path {\n  fill: #78350f;\n  stroke: #f59e0b;\n  stroke-width: 2px;\n}\n.badge-title {\n  fill: #fef3c7;\n  font-weight: 800;\n}\n.badge-subtitle {\n  fill: #d97706;\n}`,
+                grad1: '#292524', grad2: '#44403c', iconColor: '#f59e0b'
+            },
+            'royal-guard': {
+                css: `#badge-svg-element {\n  filter: drop-shadow(0 15px 25px rgba(30, 58, 138, 0.4));\n}\n.shield-base {\n  fill: url(#shieldGradRoyal);\n  stroke: #e2e8f0;\n  stroke-width: 6px;\n}\n.badge-banner path {\n  fill: #1e3a8a;\n  stroke: #cbd5e1;\n  stroke-width: 2px;\n}\n.badge-title {\n  fill: #ffffff;\n  font-weight: 900;\n}\n.badge-subtitle {\n  fill: #93c5fd;\n}`,
+                grad1: '#1e1b4b', grad2: '#1e40af', iconColor: '#e2e8f0'
+            },
+            'emerald-forest': {
+                css: `#badge-svg-element {\n  filter: drop-shadow(0 15px 20px rgba(16, 185, 129, 0.25));\n}\n.shield-base {\n  fill: url(#shieldGradEmerald);\n  stroke: #10b981;\n  stroke-width: 5px;\n}\n.badge-banner path {\n  fill: #064e3b;\n  stroke: #34d399;\n  stroke-width: 2px;\n}\n.badge-title {\n  fill: #ecfdf5;\n  font-weight: 800;\n}\n.badge-subtitle {\n  fill: #6ee7b7;\n}`,
+                grad1: '#022c22', grad2: '#065f46', iconColor: '#a7f3d0'
+            },
+            'minimal-dark': {
+                css: `#badge-svg-element {\n  filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.8));\n}\n.shield-base {\n  fill: #111827;\n  stroke: #374151;\n  stroke-width: 4px;\n}\n.badge-banner path {\n  fill: #1f2937;\n  stroke: #4b5563;\n  stroke-width: 1.5px;\n}\n.badge-title {\n  fill: #f9fafb;\n  font-weight: 700;\n}\n.badge-subtitle {\n  fill: #9ca3af;\n}`,
+                grad1: '#111827', grad2: '#111827', iconColor: '#f9fafb'
+            }
+        };
+
+        // Icons sample data
+        // Dynamic icon catalogue (50 FontAwesome + 50 Bootstrap Icons)
+const SAMPLE_ICONS = {
+    fa: [
+        // Boucliers, Armes & Armures (Combat)
+        'shield-halved', 'shield-cat', 'shield-heart', 'shield', 'sword', 
+        'swords', 'axe', 'bow-arrow', 'crosshairs', 'skull-crossbones',
+        
+        // Royauté, Magie & Prestige
+        'crown', 'gem', 'wand-magic-sparkles', 'hat-wizard', 'key', 
+        'chess-knight', 'dragon', 'feather-pointed', 'ghost', 'scroll',
+        
+        // Symboles, Éléments & Nature
+        'fire', 'bolt', 'sun', 'moon', 'snowflake', 
+        'tree', 'mountain', 'water', 'skull', 'heart',
+        
+        // Exploration, Cartographie & Maritime
+        'anchor', 'compass', 'map-location-dot', 'flag', 'compass-drafting', 
+        'route', 'globe', 'binoculars', 'sack-dollar', 'trophy',
+        
+        // Technologie, Sci-Fi & Moderne
+        'gear', 'microchip', 'robot', 'atom', 'magnet', 
+        'rocket', 'satellite', 'radio', 'star', 'award'
+    ],
+    bi: [
+        // Boucliers, Sécurité & Symboles
+        'shield-shaded', 'shield-lock', 'shield-check', 'shield-slash', 'trophy', 
+        'award', 'star', 'gem', 'suit-spade', 'suit-club',
+        
+        // Éléments, Nature & Météo
+        'fire', 'lightning-charge', 'tsunami', 'brightness-high', 'moon-stars', 
+        'cloud-lightning', 'tree', 'flower1', 'droplet', 'snow',
+        
+        // Exploration & Maritime
+        'compass', 'anchor', 'globe-americas', 'map', 'flag', 
+        'suit-heart', 'patch-check', 'pin-angle', 'geo-alt', 'signpost-split',
+        
+        // Technologie & Mécanique
+        'gear', 'cpu', 'robot', 'controller', 'joystick', 
+        'rocket-takeoff', 'wifi', 'broadcast', 'bug', 'code-slash',
+        
+        // Objets, Outils & Divers
+        'key', 'lightbulb', 'box-seam', 'palette', 'heart-pulse', 
+        'eye', 'egg-fried', 'cup-hot', 'mortarboard', 'pen'
+    ]
+};
+
+        const pathCache = {};
+
+        // Application State
+        const state = {
+            library: 'fa',
+            searchQuery: '',
+            selectedIcons: [
+                { lib: 'fa', name: 'shield-halved' }
+            ],
+            title: 'SHIELD',
+            subtitle: 'GUARDIAN 2026',
+			titleSize: 18,
+			subtitleSize: 11,
+            preset: 'gold-blood',
+            customCss: CSS_PRESETS['gold-blood'].css,
+            grad1: CSS_PRESETS['gold-blood'].grad1,
+            grad2: CSS_PRESETS['gold-blood'].grad2,
+            iconColor: CSS_PRESETS['gold-blood'].iconColor,
+            shieldShape: 'classic',
+            ribbonStyle: 'bottom',
+            iconSize: 50
+        };
+
+        // DOM Elements
+        const DOM = {
+            tabs: {
+                iconsBtn: document.getElementById('tab-icons-btn'),
+                styleBtn: document.getElementById('tab-style-btn'),
+                textBtn: document.getElementById('tab-text-btn'),
+                iconsContent: document.getElementById('tab-icons-content'),
+                styleContent: document.getElementById('tab-style-content'),
+                textContent: document.getElementById('tab-text-content'),
+            },
+            librarySelect: document.getElementById('icon-library-select'),
+            searchInput: document.getElementById('icon-search-input'),
+            iconsGrid: document.getElementById('icons-grid'),
+            selectedContainer: document.getElementById('selected-icons-container'),
+            selectedCount: document.getElementById('selected-count'),
+            layoutHint: document.getElementById('layout-hint'),
+            presetSelect: document.getElementById('preset-select'),
+            cssInput: document.getElementById('custom-css-input'),
+            textTitle: document.getElementById('text-title'),
+            textSubtitle: document.getElementById('text-subtitle'),
+            iconSizeSlider: document.getElementById('icon-size-slider'),
+            iconSizeVal: document.getElementById('icon-size-val'),
+            ribbonStyleSelect: document.getElementById('ribbon-style-select'),
+            svgWrapper: document.getElementById('svg-render-wrapper'),
+            btnExportSvg: document.getElementById('btn-export-svg'),
+            btnExportPng: document.getElementById('btn-export-png'),
+            btnSavePreset: document.getElementById('btn-save-preset'),
+            customPresetName: document.getElementById('custom-preset-name'),
+            btnReset: document.getElementById('btn-reset'),
+            shapeBtns: document.querySelectorAll('.shape-btn')
+        };
+
+        // Fetch SVG Path from Iconify API for pure vector embedding
+        async function getIconPath(lib, name) {
+            const cacheKey = `${lib}:${name}`;
+            if (pathCache[cacheKey]) return pathCache[cacheKey];
+
+            const prefix = lib === 'fa' ? 'fa6-solid' : 'bi';
+            try {
+                const res = await fetch(`https://api.iconify.design/${prefix}/${name}.svg`);
+                if (!res.ok) throw new Error('Icon not found');
+                const text = await res.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'image/svg+xml');
+                const svgEl = doc.querySelector('svg');
+                const viewBox = svgEl ? svgEl.getAttribute('viewBox') || '0 0 24 24' : '0 0 24 24';
+                const paths = Array.from(doc.querySelectorAll('path')).map(p => p.getAttribute('d')).filter(Boolean);
+                
+                const result = { viewBox, paths };
+                pathCache[cacheKey] = result;
+                return result;
+            } catch (err) {
+                console.warn('Could not load vector path for:', lib, name);
+                return { viewBox: '0 0 24 24', paths: ['M12 2L2 22h20L12 2z'] };
+            }
+        }
+
+        function init() {
+            setupTabs();
+            setupEventListeners();
+            renderIconsGrid();
+            renderSelectedIconsBadges();
+            updateSVG();
+        }
+
+        function setupTabs() {
+            const tabs = [
+                { btn: DOM.tabs.iconsBtn, content: DOM.tabs.iconsContent },
+                { btn: DOM.tabs.styleBtn, content: DOM.tabs.styleContent },
+                { btn: DOM.tabs.textBtn, content: DOM.tabs.textContent }
+            ];
+
+            tabs.forEach(({ btn, content }) => {
+                btn.addEventListener('click', () => {
+                    tabs.forEach(t => {
+                        t.btn.classList.remove('bg-amber-500', 'text-gray-950', 'shadow');
+                        t.btn.classList.add('text-gray-400');
+                        t.content.classList.add('hidden');
+                        t.content.classList.remove('flex');
+                    });
+                    btn.classList.add('bg-amber-500', 'text-gray-950', 'shadow');
+                    btn.classList.remove('text-gray-400');
+                    content.classList.remove('hidden');
+                    content.classList.add('flex');
+                });
+            });
+        }
+
+        function setupEventListeners() {
+            DOM.librarySelect.addEventListener('change', (e) => {
+                state.library = e.target.value;
+                renderIconsGrid();
+            });
+
+            DOM.searchInput.addEventListener('input', (e) => {
+                state.searchQuery = e.target.value.toLowerCase();
+                renderIconsGrid();
+            });
+
+            DOM.presetSelect.addEventListener('change', (e) => {
+                const presetKey = e.target.value;
+                if (CSS_PRESETS[presetKey]) {
+                    state.preset = presetKey;
+                    state.customCss = CSS_PRESETS[presetKey].css;
+                    state.grad1 = CSS_PRESETS[presetKey].grad1;
+                    state.grad2 = CSS_PRESETS[presetKey].grad2;
+                    state.iconColor = CSS_PRESETS[presetKey].iconColor;
+                    DOM.cssInput.value = state.customCss;
+                    updateSVG();
+                }
+            });
+
+            DOM.cssInput.addEventListener('input', (e) => {
+                state.customCss = e.target.value;
+                updateSVG();
+            });
+
+            DOM.textTitle.addEventListener('input', (e) => {
+                state.title = e.target.value;
+                updateSVG();
+            });
+
+            DOM.textSubtitle.addEventListener('input', (e) => {
+                state.subtitle = e.target.value;
+                updateSVG();
+            });
+
+            DOM.iconSizeSlider.addEventListener('input', (e) => {
+                state.iconSize = parseInt(e.target.value);
+                DOM.iconSizeVal.textContent = `${state.iconSize} px`;
+                updateSVG();
+            });
+
+            DOM.ribbonStyleSelect.addEventListener('change', (e) => {
+                state.ribbonStyle = e.target.value;
+                updateSVG();
+            });
+
+            // Shape Selector Buttons Event
+            DOM.shapeBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    DOM.shapeBtns.forEach(b => {
+                        b.classList.remove('border-amber-500', 'bg-amber-500/10');
+                        b.classList.add('border-gray-800', 'bg-gray-950');
+                        b.querySelector('i').classList.remove('text-amber-400');
+                        b.querySelector('i').classList.add('text-gray-400');
+                    });
+                    btn.classList.remove('border-gray-800', 'bg-gray-950');
+                    btn.classList.add('border-amber-500', 'bg-amber-500/10');
+                    btn.querySelector('i').classList.remove('text-gray-400');
+                    btn.querySelector('i').classList.add('text-amber-400');
+
+                    state.shieldShape = btn.getAttribute('data-shape');
+                    updateSVG();
+                });
+            });
+			
+			
+			// Dans setupEventListeners()
+			const titleSlider = document.getElementById('title-size-slider');
+			const subtitleSlider = document.getElementById('subtitle-size-slider');
+
+			titleSlider.addEventListener('input', (e) => {
+				state.titleSize = parseInt(e.target.value);
+				document.getElementById('title-size-val').textContent = `${state.titleSize} px`;
+				updateSVG();
+			});
+
+			subtitleSlider.addEventListener('input', (e) => {
+				state.subtitleSize = parseInt(e.target.value);
+				document.getElementById('subtitle-size-val').textContent = `${state.subtitleSize} px`;
+				updateSVG();
+			});
+
+            DOM.btnSavePreset.addEventListener('click', saveCustomPreset);
+            DOM.btnExportSvg.addEventListener('click', exportSVG);
+            DOM.btnExportPng.addEventListener('click', exportPNG);
+            DOM.btnReset.addEventListener('click', resetDefaults);
+        }
+
+
+
+
+        function renderIconsGrid() {
+            DOM.iconsGrid.innerHTML = '';
+            const iconsList = SAMPLE_ICONS[state.library] || [];
+            const filtered = iconsList.filter(i => i.includes(state.searchQuery));
+
+            if (filtered.length === 0) {
+                DOM.iconsGrid.innerHTML = `<div class="col-span-full py-4 text-center text-xs text-gray-500">Aucune icône trouvée.</div>`;
+                return;
+            }
+
+            filtered.forEach(iconName => {
+                const isSelected = state.selectedIcons.some(i => i.lib === state.library && i.name === iconName);
+                const card = document.createElement('div');
+                card.className = `flex flex-col items-center justify-center p-2 rounded-xl cursor-pointer transition border ${
+                    isSelected 
+                        ? 'bg-amber-500/10 border-amber-500 text-amber-400' 
+                        : 'bg-gray-900 border-gray-800 text-gray-400 hover:border-gray-700 hover:text-gray-200'
+                }`;
+
+                const iconClass = state.library === 'fa' ? `fa-solid fa-${iconName}` : `bi bi-${iconName}`;
+                
+                card.innerHTML = `
+                    <i class="${iconClass} text-xl mb-1"></i>
+                    <span class="text-[10px] truncate max-w-full font-mono">${iconName}</span>
+                `;
+
+                card.addEventListener('click', () => toggleSelectIcon(state.library, iconName));
+                DOM.iconsGrid.appendChild(card);
+            });
+        }
+
+        function renderSelectedIconsBadges() {
+            DOM.selectedContainer.innerHTML = '';
+            DOM.selectedCount.textContent = state.selectedIcons.length;
+
+            const count = state.selectedIcons.length;
+            if (count === 1) DOM.layoutHint.textContent = 'Mode: Shield Simple (1 icône)';
+            else if (count === 2) DOM.layoutHint.textContent = 'Mode: Blason Séparé / Versants (2 icônes)';
+            else DOM.layoutHint.textContent = `Mode: Roue Dentelée / Cercle (${count} icônes)`;
+
+            state.selectedIcons.forEach((item, index) => {
+                const badge = document.createElement('div');
+                badge.className = 'flex items-center space-x-1.5 bg-gray-800 border border-gray-700 text-amber-300 text-xs px-2.5 py-1 rounded-lg';
+                const iconClass = item.lib === 'fa' ? `fa-solid fa-${item.name}` : `bi bi-${item.name}`;
+                
+                badge.innerHTML = `
+                    <i class="${iconClass}"></i>
+                    <span class="font-mono text-[11px]">${item.name}</span>
+                    <button class="hover:text-red-400 ml-1 font-bold text-sm">&times;</button>
+                `;
+
+                badge.querySelector('button').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    removeIconAt(index);
+                });
+
+                DOM.selectedContainer.appendChild(badge);
+            });
+        }
+
+        function toggleSelectIcon(lib, name) {
+            const index = state.selectedIcons.findIndex(i => i.lib === lib && i.name === name);
+            if (index > -1) {
+                if (state.selectedIcons.length > 1) {
+                    state.selectedIcons.splice(index, 1);
+                }
+            } else {
+                if (state.selectedIcons.length < 8) {
+                    state.selectedIcons.push({ lib, name });
+                }
+            }
+            renderIconsGrid();
+            renderSelectedIconsBadges();
+            updateSVG();
+        }
+
+        function removeIconAt(index) {
+            if (state.selectedIcons.length > 1) {
+                state.selectedIcons.splice(index, 1);
+                renderIconsGrid();
+                renderSelectedIconsBadges();
+                updateSVG();
+            }
+        }
+
+        // Expanded Shield Shapes Generators
+        function getShieldPath(shape) {
+            switch(shape) {
+                case 'gothic':
+                    return "M 150,15 C 250,15 285,100 285,150 C 285,250 180,315 150,330 C 120,315 15,250 15,150 C 15,100 50,15 150,15 Z";
+                case 'heater':
+                    return "M 25,25 L 275,25 C 275,170 240,280 150,325 C 60,280 25,170 25,25 Z";
+				case 'diamond':
+                    return "M 150,15 L 280,150 L 150,285 L 20,150 Z";
+                case 'circle':
+                    return "M 150,20 A 135,135 0 1,1 149.9,20 Z";
+                case 'polygon':
+                    return "M 100,20 L 200,20 L 280,100 L 280,200 L 200,280 L 100,280 L 20,200 L 20,100 Z";
+                case 'badge':
+                    return "M 40,20 L 260,20 C 270,20 280,30 280,40 L 280,220 L 150,315 L 20,220 L 20,40 C 20,30 30,20 40,20 Z";
+                case 'classic':
+                default:
+                    return "M 150,20 C 230,20 270,30 270,70 C 270,180 210,250 150,300 C 90,250 30,180 30,70 C 30,30 70,20 150,20 Z";
+            }
+        }
+
+        // SVG Ribbon Generator
+        function getRibbonSVG(style, title, subtitle, titleSize, subtitleSize) {
+			if (style === 'none') return '';
+
+			let bannerY = 260;
+			if (style === 'top') bannerY = 40;
+			if (style === 'center') bannerY = 145;
+
+			const titleY = bannerY + 17;
+			const subY = bannerY + 40;
+
+			return `
+				<g class="badge-banner">
+					<path d="M 30,${bannerY} L 270,${bannerY} L 255,${bannerY+30} L 45,${bannerY+30} Z" />
+					<text x="150" y="${titleY}" text-anchor="middle" dominant-baseline="middle" style="font-size: ${titleSize}px !important;" class="badge-title">${escapeHTML(title)}</text>
+					${subtitle ? `<text x="150" y="${subY}" text-anchor="middle" dominant-baseline="middle" style="font-size: ${subtitleSize}px !important;" class="badge-subtitle">${escapeHTML(subtitle)}</text>` : ''}
+				</g>
+			`;
+		}
+
+        // SVG Layout Generator for Icons (PURE VECTOR PATHS)
+        async function getIconsLayoutSVG(icons, size, iconColor) {
+            const count = icons.length;
+            let result = '';
+
+            if (count === 1) {
+                const iconData = await getIconPath(icons[0].lib, icons[0].name);
+                result += renderVectorIcon(iconData, 150, 140, size, iconColor);
+            } else if (count === 2) {
+                result += `<line x1="150" y1="40" x2="150" y2="260" stroke="${iconColor}" stroke-width="1.5" stroke-dasharray="4,4" opacity="0.3"/>`;
+                const icon1 = await getIconPath(icons[0].lib, icons[0].name);
+                const icon2 = await getIconPath(icons[1].lib, icons[1].name);
+
+                result += renderVectorIcon(icon1, 100, 140, size * 0.85, iconColor);
+                result += renderVectorIcon(icon2, 200, 140, size * 0.85, iconColor);
+            } else {
+                const radius = 70;
+                const centerX = 150;
+                const centerY = 140;
+
+                result += `<circle cx="${centerX}" cy="${centerY}" r="${radius}" fill="none" stroke="${iconColor}" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.3"/>`;
+
+                for (let i = 0; i < count; i++) {
+                    const angle = (i * 2 * Math.PI / count) - (Math.PI / 2);
+                    const x = centerX + radius * Math.cos(angle);
+                    const y = centerY + radius * Math.sin(angle);
+                    const iconData = await getIconPath(icons[i].lib, icons[i].name);
+
+                    result += renderVectorIcon(iconData, x, y, Math.min(size, 45), iconColor);
+                }
+            }
+
+            return result;
+        }
+
+        function renderVectorIcon(iconData, cx, cy, size, fill) {
+            const vb = iconData.viewBox.split(' ').map(Number);
+            const vbWidth = vb[2] || 24;
+            const vbHeight = vb[3] || 24;
+
+            const scale = size / Math.max(vbWidth, vbHeight);
+            const translateX = cx - (vbWidth * scale) / 2;
+            const translateY = cy - (vbHeight * scale) / 2;
+
+            const pathsSVG = iconData.paths.map(p => `<path d="${p}" fill="${fill}" />`).join('');
+
+            return `
+                <g transform="translate(${translateX}, ${translateY}) scale(${scale})">
+                    ${pathsSVG}
+                </g>
+            `;
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>"']/g, function(m) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                }[m];
+            });
+        }
+
+        async function updateSVG() {
+            const shieldPath = getShieldPath(state.shieldShape);
+            const ribbonGroup = getRibbonSVG(state.ribbonStyle, state.title, state.subtitle, state.titleSize, state.subtitleSize);
+            const iconsGroup = await getIconsLayoutSVG(state.selectedIcons, state.iconSize, state.iconColor);
+			
+
+            const svgContent = `
+            <svg id="badge-svg-element" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 340" width="300" height="340">
+                <style>
+                    ${state.customCss}
+                </style>
+
+                <defs>
+                    <linearGradient id="shieldGradGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#450a0a"/>
+                        <stop offset="100%" stop-color="#991b1b"/>
+                    </linearGradient>
+                    <linearGradient id="shieldGradCyber" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#0f172a"/>
+                        <stop offset="100%" stop-color="#1e1b4b"/>
+                    </linearGradient>
+                    <linearGradient id="shieldGradSteam" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#292524"/>
+                        <stop offset="100%" stop-color="#44403c"/>
+                    </linearGradient>
+                    <linearGradient id="shieldGradRoyal" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#1e1b4b"/>
+                        <stop offset="100%" stop-color="#1e40af"/>
+                    </linearGradient>
+                    <linearGradient id="shieldGradEmerald" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#022c22"/>
+                        <stop offset="100%" stop-color="#065f46"/>
+                    </linearGradient>
+                </defs>
+
+                <!-- Shield Base Path -->
+                <path d="${shieldPath}" class="shield-base" />
+
+                <!-- Embedded Dynamic Vector Icons -->
+                <g class="badge-icons-group">
+                    ${iconsGroup}
+                </g>
+
+                <!-- Text Ribbon Layer -->
+                ${ribbonGroup}
+            </svg>
+            `;
+
+            DOM.svgWrapper.innerHTML = svgContent;
+        }
+
+        function exportSVG() {
+            const svgElement = document.getElementById('badge-svg-element');
+            if (!svgElement) return;
+
+            const svgData = new XMLSerializer().serializeToString(svgElement);
+            const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `shield-badge-${Date.now()}.svg`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function exportPNG() {
+            const svgElement = document.getElementById('badge-svg-element');
+            if (!svgElement) return;
+
+            const svgString = new XMLSerializer().serializeToString(svgElement);
+            const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+            const URLObj = window.URL || window.webkitURL || window;
+            const blobURL = URLObj.createObjectURL(svgBlob);
+
+            const image = new Image();
+            image.onload = () => {
+                const canvas = document.createElement('canvas');
+                const scale = 2;
+                canvas.width = 300 * scale;
+                canvas.height = 340 * scale;
+
+                const context = canvas.getContext('2d');
+                context.scale(scale, scale);
+                context.drawImage(image, 0, 0);
+
+                const pngURL = canvas.toDataURL('image/png');
+                const a = document.createElement('a');
+                a.href = pngURL;
+                a.download = `shield-badge-${Date.now()}.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URLObj.revokeObjectURL(blobURL);
+            };
+
+            image.src = blobURL;
+        }
+
+        function saveCustomPreset() {
+            const name = DOM.customPresetName.value.trim();
+            if (!name) {
+                alert('Veuillez saisir un nom pour votre preset.');
+                return;
+            }
+
+            const presetKey = 'custom-' + Date.now();
+            CSS_PRESETS[presetKey] = {
+                css: state.customCss,
+                grad1: state.grad1,
+                grad2: state.grad2,
+                iconColor: state.iconColor
+            };
+
+            const option = document.createElement('option');
+            option.value = presetKey;
+            option.textContent = `★ ${name}`;
+            DOM.presetSelect.appendChild(option);
+            DOM.presetSelect.value = presetKey;
+
+            DOM.customPresetName.value = '';
+            alert(`Preset "${name}" enregistré avec succès !`);
+        }
+
+        function resetDefaults() {
+            state.selectedIcons = [{ lib: 'fa', name: 'shield-halved' }];
+            state.title = 'SHIELD';
+            state.subtitle = 'GUARDIAN 2026';
+            state.preset = 'gold-blood';
+            state.customCss = CSS_PRESETS['gold-blood'].css;
+            state.shieldShape = 'classic';
+            state.ribbonStyle = 'bottom';
+            state.iconSize = 50;
+
+            DOM.textTitle.value = state.title;
+            DOM.textSubtitle.value = state.subtitle;
+            DOM.presetSelect.value = state.preset;
+            DOM.cssInput.value = state.customCss;
+            DOM.ribbonStyleSelect.value = state.ribbonStyle;
+            DOM.iconSizeSlider.value = state.iconSize;
+            DOM.iconSizeVal.textContent = '50 px';
+
+            renderIconsGrid();
+            renderSelectedIconsBadges();
+            updateSVG();
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

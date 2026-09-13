@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Nettoyeur de Titres Word (Stabilité Maximale)</title>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', system-ui, sans-serif; max-width: 700px; margin: 50px auto; text-align: center; color: #2c3e50; }
+        .upload-container { border: 3px dashed #3498db; padding: 50px; border-radius: 20px; background: #ebf5fb; cursor: pointer; transition: 0.3s; }
+        .upload-container:hover { background: #d6eaf8; border-color: #2980b9; }
+        #status { margin-top: 25px; padding: 15px; border-radius: 8px; font-weight: bold; }
+        .success { background: #d5f5e3; color: #27ae60; }
+        .error { background: #fadbd8; color: #c0392b; }
+        h1 { color: #2980b9; }
+    </style>
+</head>
+<body>
+
+    <h1>Nettoyeur de Structure Word</h1>
+    <p>Ce processeur retire les <strong>niveaux hiérarchiques</strong> (H1, H2...) tout en tentant de préserver l'aspect visuel du texte.</p>
+
+    <div class="upload-container" onclick="document.getElementById('fileInput').click()">
+        <strong>Cliquez pour charger un fichier .docx</strong>
+        <p style="font-size: 0.9em; color: #7f8c8d;">(Le traitement est local, vos données ne quittent pas votre ordinateur)</p>
+        <input type="file" id="fileInput" accept=".docx" style="display:none">
+    </div>
+
+    <div id="status"></div>
+
+    <script>
+        document.getElementById('fileInput').addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const status = document.getElementById('status');
+            status.className = '';
+            status.innerText = "Analyse du fichier...";
+
+            try {
+                const zip = await JSZip.loadAsync(file);
+                const docXmlPath = "word/document.xml";
+                let docXmlStr = await zip.file(docXmlPath).async("string");
+                
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(docXmlStr, "application/xml");
+
+                // Dans le XML de Word :
+                // <w:p> est un paragraphe
+                // <w:pPr> contient les propriétés du paragraphe
+                // <w:pStyle> définit le style (ex: Heading1)
+                
+                const paragraphs = xmlDoc.getElementsByTagName("w:p");
+                let modifiedCount = 0;
+
+                for (let i = 0; i < paragraphs.length; i++) {
+                    const pPr = paragraphs[i].getElementsByTagName("w:pPr")[0];
+                    if (pPr) {
+                        const pStyle = pPr.getElementsByTagName("w:pStyle")[0];
+                        if (pStyle) {
+                            const val = pStyle.getAttribute("w:val");
+                            // On détecte les styles de type Titre / Heading
+                            if (val && (val.match(/Heading/i) || val.match(/Titre/i) || val.match(/Title/i))) {
+                                // On supprime la définition du style de titre
+                                pPr.removeChild(pStyle);
+                                modifiedCount++;
+                            }
+                        }
+                    }
+                }
+
+                // Conversion du XML modifié en texte
+                const serializer = new XMLSerializer();
+                const newXmlStr = serializer.serializeToString(xmlDoc);
+                
+                // On remet le XML dans le ZIP
+                zip.file(docXmlPath, newXmlStr);
+                
+                // Génération du nouveau fichier .docx
+                const blob = await zip.generateAsync({
+                    type: "blob",
+                    mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                });
+
+                saveAs(blob, file.name.replace(".docx", "_nettoye.docx"));
+                status.className = 'success';
+                status.innerText = `Traitement réussi ! ${modifiedCount} titres convertis en texte simple.`;
+
+            } catch (err) {
+                console.error(err);
+                status.className = 'error';
+                status.innerText = "Erreur lors du traitement. Vérifiez que le fichier n'est pas corrompu.";
+            }
+        });
+    </script>
+</body>
+</html>

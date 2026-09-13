@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Moodle XML Filter - Catégories & Tags</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; max-width: 1100px; margin: 20px auto; padding: 20px; background: #f0f2f5; color: #333; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1 { color: #f98012; border-bottom: 3px solid #f98012; padding-bottom: 10px; }
+        h2 { font-size: 1.2em; color: #555; margin-top: 0; }
+        
+        .flex-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .scroll-area { max-height: 350px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 6px; background: #fafafa; }
+        
+        .filter-item { display: flex; align-items: center; padding: 4px 0; font-size: 0.9em; border-bottom: 1px solid #eee; }
+        .filter-item:last-child { border-bottom: none; }
+        .filter-item input { margin-right: 10px; cursor: pointer; }
+        
+        .toolbar { margin-bottom: 10px; display: flex; gap: 5px; }
+        .btn-small { padding: 4px 8px; font-size: 0.75em; background: #666; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        .btn-small:hover { background: #444; }
+
+        button.main-btn { background: #f98012; color: white; border: none; padding: 12px 25px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1em; transition: 0.2s; }
+        button.main-btn:hover { background: #e67300; transform: translateY(-1px); }
+        button.main-btn:disabled { background: #ccc; cursor: not-allowed; }
+        
+        .stats { margin-top: 15px; font-weight: bold; color: #0070d2; }
+        .badge { background: #e8e8e8; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; margin-left: auto; color: #555; font-weight: bold; }
+        input[type="file"] { margin-bottom: 10px; }
+        .info { font-size: 0.9em; color: #777; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+    <h1>Moodle XML Filter</h1>
+
+    <div class="card">
+        <h2>1. Charger le fichier</h2>
+        <input type="file" id="xmlFile" accept=".xml">
+        <button class="main-btn" onclick="analyzeXML()">Analyser le fichier</button>
+        <div id="statsInfo" class="stats"></div>
+    </div>
+
+    <div id="filterSection" class="card" style="display:none;">
+        <h2>2. Configurer les filtres</h2>
+        <p class="info">Exportation : Questions appartenant aux catégories cochées <b>ET</b> possédant au moins un des tags cochés.</p>
+        
+        <div class="flex-grid">
+            <div>
+                <h3>Catégories</h3>
+                <div class="toolbar">
+                    <button class="btn-small" onclick="toggleAll('cat-checkbox', true)">Tout cocher</button>
+                    <button class="btn-small" onclick="toggleAll('cat-checkbox', false)">Tout décocher</button>
+                    <button class="btn-small" onclick="invertSelection('cat-checkbox')">Inverser</button>
+                </div>
+                <div class="scroll-area" id="categoryList"></div>
+            </div>
+
+            <div>
+                <h3>Tags</h3>
+                <div class="toolbar">
+                    <button class="btn-small" onclick="toggleAll('tag-checkbox', true)">Tout cocher</button>
+                    <button class="btn-small" onclick="toggleAll('tag-checkbox', false)">Tout décocher</button>
+                    <button class="btn-small" onclick="invertSelection('tag-checkbox')">Inverser</button>
+                </div>
+                <div class="scroll-area" id="tagList"></div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 30px; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
+            <button class="main-btn" onclick="generateFilteredXML()">Générer & Télécharger le XML Filtré</button>
+        </div>
+    </div>
+
+    <script>
+        let questionsData = []; 
+        let allCategories = new Set();
+        let allTags = new Set();
+
+        async function analyzeXML() {
+            const fileInput = document.getElementById('xmlFile');
+            if (!fileInput.files[0]) return alert("Veuillez choisir un fichier.");
+
+            const text = await fileInput.files[0].text();
+            const parser = new DOMParser();
+            const originalDoc = parser.parseFromString(text, "text/xml");
+
+            const quizNode = originalDoc.querySelector('quiz');
+            if (!quizNode) return alert("Fichier XML Moodle invalide.");
+
+            questionsData = [];
+            allCategories.clear();
+            allTags.clear();
+
+            let currentCategory = "Par défaut";
+            const children = Array.from(quizNode.children);
+
+            children.forEach(node => {
+                if (node.nodeName === "question") {
+                    const type = node.getAttribute("type");
+                    if (type === "category") {
+                        currentCategory = node.querySelector("category text").textContent;
+                        allCategories.add(currentCategory);
+                    } else {
+                        const tags = Array.from(node.querySelectorAll("tags tag text")).map(t => t.textContent);
+                        tags.forEach(t => allTags.add(t));
+                        questionsData.push({
+                            node: node.cloneNode(true),
+                            category: currentCategory,
+                            tags: tags
+                        });
+                    }
+                }
+            });
+
+            displayFilters();
+            document.getElementById('filterSection').style.display = 'block';
+            document.getElementById('statsInfo').textContent = `${questionsData.length} questions analysées.`;
+        }
+
+        function displayFilters() {
+            const catContainer = document.getElementById('categoryList');
+            const tagContainer = document.getElementById('tagList');
+            catContainer.innerHTML = "";
+            tagContainer.innerHTML = "";
+
+            Array.from(allCategories).sort().forEach(cat => {
+                const count = questionsData.filter(q => q.category === cat).length;
+                catContainer.innerHTML += `
+                    <div class="filter-item">
+                        <input type="checkbox" class="cat-checkbox" value="${cat}" checked>
+                        <span>${cat}</span> <span class="badge">${count}</span>
+                    </div>`;
+            });
+
+            Array.from(allTags).sort().forEach(tag => {
+                const count = questionsData.filter(q => q.tags.includes(tag)).length;
+                tagContainer.innerHTML += `
+                    <div class="filter-item">
+                        <input type="checkbox" class="tag-checkbox" value="${tag}" checked>
+                        <span>${tag}</span> <span class="badge">${count}</span>
+                    </div>`;
+            });
+        }
+
+        // --- Fonctions de sélection de masse ---
+        function toggleAll(className, state) {
+            document.querySelectorAll('.' + className).forEach(cb => cb.checked = state);
+        }
+
+        function invertSelection(className) {
+            document.querySelectorAll('.' + className).forEach(cb => cb.checked = !cb.checked);
+        }
+
+        function generateFilteredXML() {
+            const selectedCats = Array.from(document.querySelectorAll('.cat-checkbox:checked')).map(cb => cb.value);
+            const selectedTags = Array.from(document.querySelectorAll('.tag-checkbox:checked')).map(cb => cb.value);
+
+            if (selectedCats.length === 0) return alert("Veuillez cocher au moins une catégorie.");
+
+            const newDoc = document.implementation.createDocument("", "quiz", null);
+            const root = newDoc.documentElement;
+            let lastAddedCategory = "";
+
+            questionsData.forEach(q => {
+                const catMatch = selectedCats.includes(q.category);
+                // Si aucun tag n'est sélectionné, on considère qu'on ne filtre pas par tag (on prend tout)
+                const tagMatch = selectedTags.length === 0 || q.tags.some(t => selectedTags.includes(t));
+
+                if (catMatch && tagMatch) {
+                    if (q.category !== lastAddedCategory) {
+                        const catNode = newDoc.createElement("question");
+                        catNode.setAttribute("type", "category");
+                        const catText = newDoc.createElement("category");
+                        const txt = newDoc.createElement("text");
+                        txt.textContent = q.category;
+                        catText.appendChild(txt);
+                        catNode.appendChild(catText);
+                        root.appendChild(catNode);
+                        lastAddedCategory = q.category;
+                    }
+                    root.appendChild(newDoc.importNode(q.node, true));
+                }
+            });
+
+            const serializer = new XMLSerializer();
+            const xmlString = '<?xml version="1.0" encoding="UTF-8"?>\n' + serializer.serializeToString(newDoc);
+            const blob = new Blob([xmlString], { type: 'text/xml' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = "moodle_export_filtre.xml";
+            a.click();
+        }
+    </script>
+</body>
+</html>
