@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -40,3 +41,47 @@
 	</div>
 </body>
 </html>
+=======
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title></title>
+	<meta charset="UTF-8">
+	<meta name="description" content="">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+</head>
+
+<body>
+<div class="container">
+<h1>Artifacts</h1>
+<div>Artefacts (petits outils) créés par IA pour différentes utilités</div>
+<h2>Moodle</h2>
+<ul>
+	<li><a href="moodle-xml-selecteur">Sélecteur questions moodle par catégorie, tag, type</a>: Obtenir les questions moodle filtrées sur certaines catégories et certains tags et certains types, à partir d'un grand fichier de questions. Inclus une prévisualisation des questions.</li>
+	<li><a href="moodle-cloze-html">Moodle cloze en html:</a>Convertit les questions cloze de moodle en question accessible sur une page web hors moodle. (Utile pour les écoles qui n'ont pas de plateforme).</li>
+	<li><a href="moodle-xml-traduction">moodle-xml-traduction:</a>(imparfait) Permet d'avoir un fichier de questions allégé (sans les images) pour le faire traduire par une IA et le réinjecter dans moodle. (il y a des erreurs qui bloquent lors du réimport... impossible de voir pourquoi).</li>
+	<li><a href="moodle-xml-text">Extrait le maximum de texte du fichier d'une banque de question. Utilité: permet de donner les questions à une IA qui va construire le support de cours correspondant aux évaluations</a></li>
+</ul>
+
+<h2>Blackboard</h2>
+<ul>
+<li><a href="moodle-cloze-blackboard-fill-blank">moodle-cloze-blackboard-fill-blank</a>Convertit un fichier xml de questions cloze moodle en questions "FIB" (Texte à trou, fill in the blank) de Blackboard. Le résultat n'est pas un fichier d'import, mais le texte de la question à copier-coller (en texte brut Ctrl+maj+V) dans les questions FIB, qui est parfaitement traité en faisant "étape suivante" (next step) dans blackboard.</li>
+</ul>
+	
+<h2>Chinois</h2>
+<ul>
+	<li><a href="chinois-pinyin-tons">Chinois Pynyin tons</a></li>
+	<li><a href="chinois-simp-trad">Chinois Convertisseur simplifié - traditionnel</a></li>
+</ul>
+<h2>Divers</h2>
+<ul>
+	<li><a href="data-en-cards">data-en-cards</a>: Remplit des modèles de "cartes" à partir de données json ou csv</li>
+	<li><a href="word-sans-titres">word-sans-titres</a>: Retire le "niveau de titre" tout en conservant la mise en forme (utile pour créer un exercice où les étudiants doivent refaire la table des matières)</li>
+	<li><a href="tableau-excel-word-html">tableau-excel-word-html</a>: convertit des tableaux Excel ou Word en html, en choisissant des paramètres: ajouter les numéros de ligne et lettre des colonne, conserver les formats, les symboles monétaires...</li>
+	<li><a href="tableaux-excel-word-markdown-json-csv">tableaux-excel-word-markdown-json-csv</a>: permet de transformer différents tableaux Excel / Word en markdown, csv ou json</li>
+	<li><a href="markdown-html">markdown-html</a>: Convertit du markdown en html: attention, beaucoup de caractères sont transformé en entité (l'apostrophe et les accents sont convertis pour avoir un format html strict)</li>
+</ul>
+	</div>
+</body>
+</html>
+>>>>>>> dec3cd8f029bf5a5e12c8955e64f87a954ab8842
