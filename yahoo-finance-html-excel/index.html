@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Nettoyeur Yahoo Finance → Excel</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --card: #ffffff;
+    --border: #d9dee5;
+    --text: #1f2430;
+    --muted: #6b7280;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --ok: #16a34a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.45;
+  }
+  header {
+    padding: 20px 24px 8px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  header p { margin: 0; color: var(--muted); font-size: 14px; }
+  main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 16px 24px 40px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; }
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    min-height: 320px;
+  }
+  .card h2 {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    margin: 0 0 10px;
+  }
+  textarea {
+    flex: 1;
+    width: 100%;
+    min-height: 240px;
+    resize: vertical;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    background: #fbfcfd;
+    color: var(--text);
+  }
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-top: 12px;
+  }
+  button {
+    font: inherit;
+    font-size: 14px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--text);
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  button:hover { background: #f0f2f5; }
+  button.primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  button.copied { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--muted);
+    user-select: none;
+    cursor: pointer;
+  }
+  .toggle input { width: 16px; height: 16px; accent-color: var(--accent); }
+  .status {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 8px;
+    min-height: 18px;
+  }
+  .status.error { color: #b91c1c; }
+  .status.ok { color: var(--ok); }
+  #outputWrap {
+    overflow: auto;
+    max-height: 520px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: 4px;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  th, td {
+    border-bottom: 1px solid #eef1f4;
+    padding: 6px 10px;
+    text-align: right;
+    white-space: nowrap;
+  }
+  th {
+    background: #f3f5f8;
+    position: sticky;
+    top: 0;
+    font-weight: 600;
+    text-align: right;
+  }
+  th:first-child, td:first-child { text-align: left; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Nettoyeur Yahoo Finance → Excel</h1>
+  <p>Colle le code HTML de la table Yahoo Finance. La page supprime les lignes de dividendes, garde Date + OHLC + Adj Close + Volume, et te laisse copier le résultat vers Excel.</p>
+</header>
+
+<main>
+  <section class="card">
+    <h2>1. Code HTML collé</h2>
+    <textarea id="input" placeholder="Colle ici le code de la table Yahoo (clic droit → Inspecter → copier l'élément <table>…</table>)"></textarea>
+    <div class="toolbar">
+      <button class="primary" id="cleanBtn">Nettoyer</button>
+      <button id="clearBtn">Vider</button>
+    </div>
+    <div class="status" id="status"></div>
+  </section>
+
+  <section class="card">
+    <h2>2. Tableau nettoyé</h2>
+    <div id="outputWrap">
+      <table id="outputTable">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="toolbar">
+      <button class="primary" id="copyBtn">Copier pour Excel</button>
+      <label class="toggle">
+        <input type="checkbox" id="frToggle">
+        Format français (1 234,56)
+      </label>
+    </div>
+    <div class="status" id="copyStatus"></div>
+  </section>
+</main>
+
+<script>
+(function () {
+  const inputEl = document.getElementById('input');
+  const statusEl = document.getElementById('status');
+  const copyStatusEl = document.getElementById('copyStatus');
+  const tableEl = document.getElementById('outputTable');
+  const theadEl = tableEl.querySelector('thead');
+  const tbodyEl = tableEl.querySelector('tbody');
+  const frToggle = document.getElementById('frToggle');
+
+  // Colonnes qu'on veut conserver dans l'ordre, en se basant sur le texte d'en-tête Yahoo.
+  const WANTED = ['date', 'open', 'high', 'low', 'close', 'adj close', 'volume'];
+
+  // Stocke les données brutes (strings normalisées) pour pouvoir reformater sans re-parser.
+  let rawRows = [];   // [{date, open, high, low, close, adjClose, volume}]
+  let headers = [];   // ['Date','Open','High','Low','Close','Adj Close','Volume']
+
+  function setStatus(el, msg, cls) {
+    el.textContent = msg || '';
+    el.className = 'status' + (cls ? ' ' + cls : '');
+  }
+
+  // Normalise un texte d'en-tête : minuscules, sans espaces multiples, sans * etc.
+  function normHeader(s) {
+    return (s || '')
+      .replace(/\s+/g, ' ')
+      .replace(/\u00a0/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  // Enlève les séparateurs de milliers et espaces dans un nombre, garde chiffres, . , - 
+  function cleanNumber(s) {
+    if (s == null) return '';
+    return String(s)
+      .replace(/\u00a0/g, '')
+      .replace(/\s/g, '')
+      .replace(/,/g, '')     // Yahoo utilise la virgule comme séparateur de milliers
+      .trim();
+  }
+
+  function parseHtmlTable(html) {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const table = doc.querySelector('table');
+    if (!table) throw new Error("Aucune balise <table> trouvée dans le code collé.");
+
+    // 1) En-têtes
+    const thEls = table.querySelectorAll('thead th');
+    const rawHeaders = Array.from(thEls).map(th => th.textContent.replace(/\s+/g, ' ').trim());
+    if (rawHeaders.length === 0) throw new Error("Pas d'en-têtes <th> trouvés dans <thead>.");
+
+    // 2) Construire la liste des index de colonnes à garder
+    const keepIdx = [];
+    const keepNames = [];
+    rawHeaders.forEach((h, i) => {
+      const n = normHeader(h);
+      // 'adj close' avant 'close' pour éviter le match partiel
+      if (n.startsWith('adj close')) {
+        keepIdx.push(i); keepNames.push('Adj Close');
+      } else if (WANTED.includes(n)) {
+        keepIdx.push(i);
+        // Titre propre
+        if (n === 'date') keepNames.push('Date');
+        else if (n === 'open') keepNames.push('Open');
+        else if (n === 'high') keepNames.push('High');
+        else if (n === 'low') keepNames.push('Low');
+        else if (n === 'close') keepNames.push('Close');
+        else if (n === 'volume') keepNames.push('Volume');
+      }
+    });
+
+    if (keepIdx.length === 0) {
+      throw new Error("Aucune colonne reconnue (Date, Open, High, Low, Close, Adj Close, Volume).");
+    }
+
+    // 3) Parcourir les lignes du tbody
+    const rows = table.querySelectorAll('tbody tr');
+    const out = [];
+    rows.forEach(tr => {
+      // Ligne de dividende : une cellule avec colspan>1 et classe "event"
+      const eventCell = tr.querySelector('td.event, td[colspan]');
+      if (eventCell) {
+        // On ignore complètement les lignes d'événements (dividendes, splits…)
+        return;
+      }
+      const tds = tr.querySelectorAll('td');
+      if (tds.length === 0) return;
+
+      const rec = {};
+      keepIdx.forEach((srcIdx, j) => {
+        const td = tds[srcIdx];
+        if (!td) { rec[keepNames[j]] = ''; return; }
+        const txt = td.textContent.replace(/\s+/g, ' ').trim();
+        rec[keepNames[j]] = txt;
+      });
+      // Il faut au moins une date
+      if (rec['Date']) out.push(rec);
+    });
+
+    return { headers: keepNames, rows: out };
+  }
+
+  // Formate un nombre selon le mode choisi
+  function formatCell(value, headerName, french) {
+    if (value == null || value === '') return '';
+    // La date reste telle quelle
+    if (headerName === 'Date') return value;
+
+    // Volume : entier, sans décimales
+    if (headerName === 'Volume') {
+      // Retire tout ce qui n'est pas chiffre
+      const digits = String(value).replace(/[^\d]/g, '');
+      if (!digits) return value;
+      const n = parseInt(digits, 10);
+      return french ? n.toLocaleString('fr-FR') : n.toLocaleString('en-US');
+    }
+
+    // Prix : nombre décimal
+    const cleaned = cleanNumber(value);
+    const num = parseFloat(cleaned);
+    if (isNaN(num)) return value;
+
+    // On garde les décimales d'origine si possible, sinon 2 par défaut
+    const decMatch = cleaned.match(/\.(\d+)/);
+    const decimals = decMatch ? Math.min(decMatch[1].length, 6) : 2;
+
+    if (french) {
+      // 1 234,56
+      return num.toLocaleString('fr-FR', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+        useGrouping: false
+      });
+    } else {
+      // 1,234.56
+      return num.toLocaleString('en-US', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+        useGrouping: true
+      });
+    }
+  }
+
+  function render() {
+    const french = frToggle.checked;
+
+    // thead
+    theadEl.innerHTML = '';
+    const trh = document.createElement('tr');
+    headers.forEach(h => {
+      const th = document.createElement('th');
+      th.textContent = h;
+      trh.appendChild(th);
+    });
+    theadEl.appendChild(trh);
+
+    // tbody
+    tbodyEl.innerHTML = '';
+    rawRows.forEach(rec => {
+      const tr = document.createElement('tr');
+      headers.forEach(h => {
+        const td = document.createElement('td');
+        td.textContent = formatCell(rec[h], h, french);
+        tr.appendChild(td);
+      });
+      tbodyEl.appendChild(tr);
+    });
+  }
+
+  // Construit le texte TSV (tab-separated) à coller dans Excel
+  function buildTSV() {
+    const french = frToggle.checked;
+    const lines = [];
+    lines.push(headers.join('\t'));
+    rawRows.forEach(rec => {
+      const cells = headers.map(h => formatCell(rec[h], h, french));
+      lines.push(cells.join('\t'));
+    });
+    return lines.join('\n');
+  }
+
+  async function copyToClipboard(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (e) {
+      // Fallback : textarea + execCommand
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (_) { ok = false; }
+      document.body.removeChild(ta);
+      return ok;
+    }
+  }
+
+  document.getElementById('cleanBtn').addEventListener('click', () => {
+    const html = inputEl.value.trim();
+    if (!html) {
+      setStatus(statusEl, "Colle d'abord le code HTML de la table Yahoo.", 'error');
+      return;
+    }
+    try {
+      const { headers: h, rows } = parseHtmlTable(html);
+      headers = h;
+      rawRows = rows;
+      render();
+      const skipped = (html.match(/colspan/g) || []).length;
+      setStatus(statusEl, `${rows.length} lignes conservées, ${headers.length} colonnes. Lignes de dividendes supprimées.`, 'ok');
+      setStatus(copyStatusEl, '');
+    } catch (err) {
+      setStatus(statusEl, "Erreur : " + err.message, 'error');
+    }
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    inputEl.value = '';
+    headers = [];
+    rawRows = [];
+    render();
+    setStatus(statusEl, '');
+    setStatus(copyStatusEl, '');
+  });
+
+  frToggle.addEventListener('change', () => {
+    if (headers.length) render();
+  });
+
+  document.getElementById('copyBtn').addEventListener('click', async () => {
+    if (!headers.length || !rawRows.length) {
+      setStatus(copyStatusEl, "Rien à copier : clique d'abord sur Nettoyer.", 'error');
+      return;
+    }
+    const tsv = buildTSV();
+    const ok = await copyToClipboard(tsv);
+    if (ok) {
+      setStatus(copyStatusEl, "Copié. Colle dans Excel avec Ctrl+V (les colonnes se placeront automatiquement).", 'ok');
+      const btn = document.getElementById('copyBtn');
+      btn.classList.add('copied');
+      btn.textContent = 'Copié !';
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.textContent = 'Copier pour Excel';
+      }, 1500);
+    } else {
+      setStatus(copyStatusEl, "La copie automatique a échoué. Sélectionne le tableau à la main et fais Ctrl+C.", 'error');
+    }
+  });
+
+  // Rendu initial vide
+  render();
+})();
+</script>
+</body>
+</html>
