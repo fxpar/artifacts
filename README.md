@@ -64,14 +64,9 @@ Chaque outil est une simple page HTML : il s'ouvre dans le navigateur, sans inst
 | [Parties d'échecs célèbres](echec-parties-celebres) | Lecteur de parties célèbres ([v1](https://fxpar.github.io/artifacts/echec-parties-celebres/echec-v1.html), [v2](https://fxpar.github.io/artifacts/echec-parties-celebres/echec-v2.html), [v3](https://fxpar.github.io/artifacts/echec-parties-celebres/echec-v3.html)). La v3 montre aux étudiants comment une application peut interroger une IA en pleine partie pour proposer plusieurs scénarios de coups. |
 | [Chess famous games reader](chess-famous-games-reader) | Version anglaise ([v1](https://fxpar.github.io/artifacts/chess-famous-games-reader/chess-v1.html), [v2](https://fxpar.github.io/artifacts/chess-famous-games-reader/chess-v2.html)). |
 
-## Scripts Python
-
-| Outil | Description |
-| - | - |
-| [pdf-manipulator](pdf-manipulator) | Scripts Python pour gérer les signets de gros PDF (recueils de partitions notamment) : extraction des sommaires et des pages, injection d'index. Nécessite Python : ne s'exécute pas dans le navigateur. |
-
 ## Autres dépôts
 
+- [python-artefacts](https://github.com/fxpar/python-artefacts) ([présentation](https://fxpar.github.io/python-artefacts/)) : scripts Python à exécuter sur son ordinateur, notamment pour ajouter des signets à de gros PDF (recueils de partitions), les alléger ou en extraire les pièces jointes. Ces scripts se trouvaient auparavant dans le dossier `pdf-manipulator` de ce dépôt.
 - [abc-notation-artifacts](https://github.com/fxpar/abc-notation-artifacts) : mini-applications autour de la notation musicale ABC, un langage texte très simple pour écrire des partitions et les écouter (pratique pour créer une boucle d'accords sur laquelle improviser).
 
 ## Licence

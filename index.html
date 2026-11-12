@@ -96,6 +96,7 @@ footer { color: var(--muted); font-size: .85rem; border-top: 1px solid var(--bor
     <a href="#bibliotheques">Bibliothèques utilisées</a>
     <a href="#licence">Licence</a>
     <a href="https://github.com/fxpar/artifacts">Code source sur GitHub ↗</a>
+    <a href="https://fxpar.github.io/python-artefacts/">Scripts Python (python-artefacts) ↗</a>
   </div>
   <button class="theme-btn" id="themeBtn">◐ Thème clair / sombre</button>
 </nav>
@@ -133,7 +134,7 @@ footer { color: var(--muted); font-size: .85rem; border-top: 1px solid var(--bor
   </section>
 
   <footer>
-    © 2026 François Parlant · <a href="https://github.com/fxpar/artifacts">github.com/fxpar/artifacts</a> · Voir aussi <a href="https://github.com/fxpar/abc-notation-artifacts">abc-notation-artifacts</a> (notation musicale ABC).
+    © 2026 François Parlant · <a href="https://github.com/fxpar/artifacts">github.com/fxpar/artifacts</a> · Voir aussi <a href="https://fxpar.github.io/python-artefacts/">python-artefacts</a> (scripts Python) et <a href="https://github.com/fxpar/abc-notation-artifacts">abc-notation-artifacts</a> (notation musicale ABC).
   </footer>
 </main>
 
@@ -159,8 +160,6 @@ const LIBS = {
   filesaver:  { name: 'FileSaver.js', url: 'https://github.com/eligrey/FileSaver.js', role: 'Téléchargement des fichiers produits' },
   iconify:    { name: 'Iconify (API)', url: 'https://iconify.design', role: 'Récupération des icônes en SVG' },
   gemini:     { name: 'Google Gemini (API)', url: 'https://ai.google.dev', role: 'Analyse IA de la position' },
-  pypdf:      { name: 'pypdf (Python)', url: 'https://pypdf.readthedocs.io', role: 'Lecture et écriture des PDF' },
-  gradio:     { name: 'Gradio (Python)', url: 'https://www.gradio.app', role: 'Interface web locale des scripts' },
 };
 
 const CATEGORIES = [
@@ -223,10 +222,6 @@ const CATEGORIES = [
     { name: 'Chess famous games reader', path: 'chess-famous-games-reader/chess-v2.html', folder: 'chess-famous-games-reader', libs: ['chessjs', 'chessboard', 'jquery'],
       desc: 'Version anglaise du lecteur de parties.',
       extra: [['v1', 'chess-famous-games-reader/chess-v1.html'], ['v2', 'chess-famous-games-reader/chess-v2.html']] },
-  ]},
-  { id: 'python', title: 'Scripts Python', tools: [
-    { name: 'pdf-manipulator', path: null, folder: 'pdf-manipulator', libs: ['pypdf', 'gradio'],
-      desc: 'Scripts pour gérer les signets de gros PDF (recueils de partitions notamment) : extraction des sommaires et des pages, injection d\'index. À exécuter avec Python sur votre ordinateur.' },
   ]},
 ];
 
