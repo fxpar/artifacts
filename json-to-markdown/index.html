@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JSON → Markdown · convertisseur local</title>
+  <!-- Bootstrap 5 CSS (CDN) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons (optionnel mais agréable) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    .drop-zone {
+      border: 2px dashed #adb5bd;
+      border-radius: 12px;
+      background-color: #ffffff;
+      transition: background 0.2s, border-color 0.2s;
+      cursor: pointer;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: #0d6efd;
+      background-color: #e7f1ff;
+    }
+    .markdown-output {
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.9rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    .copy-btn {
+      transition: all 0.1s ease;
+    }
+    footer {
+      font-size: 0.85rem;
+      color: #6c757d;
+    }
+  </style>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+  <main class="container py-5 flex-grow-1">
+    <!-- En-tête -->
+    <div class="row justify-content-center mb-4">
+      <div class="col-lg-8 text-center">
+        <h1 class="display-6 fw-semibold">
+          <i class="bi bi-filetype-json text-primary me-2"></i>JSON → Markdown
+        </h1>
+        <p class="lead text-secondary">
+          Déposez un fichier JSON ou collez-le ci-dessous. Les parties deviennent des titres, les éléments des listes, et les liens restent des liens.
+        </p>
+      </div>
+    </div>
+
+    <!-- Zone principale : dépôt / collage + bouton -->
+    <div class="row justify-content-center g-4">
+      <div class="col-lg-8">
+        <!-- Carte dépôt / collage -->
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-body p-4">
+            <div class="mb-3">
+              <label for="jsonInput" class="form-label fw-medium">
+                <i class="bi bi-clipboard me-1"></i>Collez votre JSON ici
+              </label>
+              <textarea id="jsonInput" class="form-control font-monospace" rows="6" placeholder='{
+  "Introduction": ["Premier élément", "Deuxième élément"],
+  "Liens utiles": [
+    "Site officiel: https://example.com",
+    "Documentation: https://docs.example.com"
+  ]
+}'></textarea>
+            </div>
+
+            <div class="drop-zone p-4 text-center rounded-3 mb-3" id="dropZone">
+              <i class="bi bi-cloud-arrow-up fs-2 text-primary d-block mb-2"></i>
+              <p class="mb-1 fw-medium">Glissez-déposez un fichier .json ici</p>
+              <p class="text-muted small mb-0">ou cliquez pour parcourir</p>
+              <input type="file" id="fileInput" accept=".json,application/json" hidden>
+            </div>
+
+            <div class="d-flex gap-2 flex-wrap">
+              <button id="convertBtn" class="btn btn-primary px-4">
+                <i class="bi bi-arrow-repeat me-1"></i>Convertir en Markdown
+              </button>
+              <button id="clearBtn" class="btn btn-outline-secondary">
+                <i class="bi bi-eraser me-1"></i>Effacer
+              </button>
+              <button id="exampleBtn" class="btn btn-outline-info">
+                <i class="bi bi-lightbulb me-1"></i>Exemple
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Résultat Markdown -->
+        <div class="card shadow-sm border-0">
+          <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+            <span class="fw-semibold"><i class="bi bi-markdown me-1"></i>Markdown généré</span>
+            <button id="copyBtn" class="btn btn-sm btn-outline-success copy-btn" disabled>
+              <i class="bi bi-copy me-1"></i>Copier
+            </button>
+          </div>
+          <div class="card-body p-0">
+            <div id="markdownOutput" class="markdown-output m-3" aria-live="polite">
+              <span class="text-muted">Le markdown apparaîtra ici…</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Message d'erreur / succès -->
+        <div id="messageArea" class="mt-3"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="container text-center pb-4">
+    <hr class="my-3">
+    <p class="mb-0">100% local · Bootstrap 5 · Conversion JSON → Markdown</p>
+  </footer>
+
+  <!-- Bootstrap JS (facultatif, pour d'éventuels composants) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    (function() {
+      'use strict';
+
+      // --- Éléments DOM ---
+      const jsonInput = document.getElementById('jsonInput');
+      const dropZone = document.getElementById('dropZone');
+      const fileInput = document.getElementById('fileInput');
+      const convertBtn = document.getElementById('convertBtn');
+      const clearBtn = document.getElementById('clearBtn');
+      const exampleBtn = document.getElementById('exampleBtn');
+      const copyBtn = document.getElementById('copyBtn');
+      const markdownOutput = document.getElementById('markdownOutput');
+      const messageArea = document.getElementById('messageArea');
+
+      // --- Fonctions utilitaires ---
+
+      // Affiche un message (type: 'success' ou 'danger')
+      function showMessage(text, type = 'danger') {
+        messageArea.innerHTML = `
+          <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            <i class="bi ${type === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle'} me-1"></i>
+            ${text}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+          </div>
+        `;
+        // Disparition automatique après 4 secondes (sauf si succès on peut laisser)
+        if (type === 'danger') {
+          setTimeout(() => {
+            const alert = messageArea.querySelector('.alert');
+            if (alert) alert.remove();
+          }, 4000);
+        }
+      }
+
+      // Efface le message
+      function clearMessage() {
+        messageArea.innerHTML = '';
+      }
+
+      // Met à jour l'état du bouton copier
+      function updateCopyButtonState(hasContent) {
+        copyBtn.disabled = !hasContent;
+      }
+
+      // --- Conversion JSON -> Markdown ---
+      function jsonToMarkdown(obj, level = 2) {
+        // level : niveau de titre pour les clés (2 => ##, 3 => ###, etc.)
+        // On limite le niveau à 6 max (######)
+        const titleLevel = Math.min(level, 6);
+        const titlePrefix = '#'.repeat(titleLevel);
+        let md = '';
+
+        // Si l'objet n'est pas un objet simple (ex: tableau, null, etc.), on le traite comme une valeur
+        if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) {
+          // Si c'est un tableau, on le transforme en liste
+          if (Array.isArray(obj)) {
+            md += arrayToMarkdownList(obj);
+          } else {
+            // Valeur primitive
+            md += String(obj);
+          }
+          return md;
+        }
+
+        // Parcours des clés de l'objet
+        for (const [key, value] of Object.entries(obj)) {
+          // Échapper les caractères markdown dans le titre ? On garde le texte brut mais on pourrait échapper.
+          const safeKey = key.replace(/([\\`*_{}\[\]()#+\-.!])/g, '\\$1'); // échappement markdown basique
+          md += `${titlePrefix} ${safeKey}\n\n`;
+
+          // Traitement de la valeur
+          if (value === null || value === undefined) {
+            md += `*vide*\n\n`;
+          } else if (Array.isArray(value)) {
+            // Liste d'éléments
+            md += arrayToMarkdownList(value, level + 1);
+          } else if (typeof value === 'object') {
+            // Sous-objet : on récurse avec un niveau de titre plus profond
+            md += jsonToMarkdown(value, level + 1);
+          } else {
+            // Valeur primitive : on la met dans une liste à puces (comme un élément)
+            md += `- ${escapeMarkdownText(String(value))}\n\n`;
+          }
+        }
+
+        return md;
+      }
+
+      // Convertit un tableau en liste markdown (avec gestion des liens et sous-listes)
+      function arrayToMarkdownList(arr, depth = 0) {
+        if (!arr.length) return '*liste vide*\n\n';
+        let md = '';
+        for (const item of arr) {
+          if (item === null || item === undefined) {
+            md += `- *vide*\n`;
+          } else if (Array.isArray(item)) {
+            // Sous-tableau : liste imbriquée
+            md += `- \n`;
+            // indentation pour la sous-liste
+            const subList = arrayToMarkdownList(item, depth + 1);
+            // indenter chaque ligne de la sous-liste
+            md += subList.split('\n').filter(line => line.trim() !== '').map(line => `  ${line}`).join('\n') + '\n';
+          } else if (typeof item === 'object') {
+            // Objet dans un tableau : on le transforme en texte ou on le sérialise ?
+            // Pour rester lisible, on affiche les paires clé-valeur sous forme de liste
+            md += `- \n`;
+            const objMd = jsonToMarkdown(item, depth + 2); // niveau titre plus profond
+            // indenter
+            md += objMd.split('\n').filter(line => line.trim() !== '').map(line => `  ${line}`).join('\n') + '\n';
+          } else {
+            // Chaîne / nombre / booléen : on applique la détection de lien
+            md += `- ${formatValueWithLinks(String(item))}\n`;
+          }
+        }
+        md += '\n';
+        return md;
+      }
+
+      // Échappe les caractères markdown dans un texte brut (pour les valeurs)
+      function escapeMarkdownText(text) {
+        return text.replace(/([\\`*_{}\[\]()#+\-.!])/g, '\\$1');
+      }
+
+      // Détecte les URLs dans une chaîne et les transforme en liens markdown
+      // ex: "Site: https://example.com" -> "Site: [https://example.com](https://example.com)"
+      function formatValueWithLinks(text) {
+        // Regex simple pour détecter les URLs http/https/ftp
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        // On échappe d'abord le texte ? Non, on veut garder les URLs intactes, mais on doit échapper les caractères markdown
+        // On va procéder par morceaux : on échappe le texte, puis on remplace les URLs échappées ? 
+        // Plus simple : on échappe tout sauf les URLs, mais c'est complexe.
+        // Alternative : on n'échappe pas le texte brut pour les valeurs, on laisse tel quel, et on remplace les URLs par des liens.
+        // Mais cela peut casser le markdown si le texte contient des caractères spéciaux.
+        // Pour un usage simple, on va échapper les caractères markdown, puis appliquer la transformation des liens.
+        let escaped = text.replace(/([\\`*_{}\[\]()#+\-.!])/g, '\\$1');
+        // Maintenant on remplace les URLs dans le texte échappé (les URLs n'ont pas été échappées car pas de caractères spéciaux markdown à part : et /)
+        // Mais attention, l'échappement a pu ajouter des backslashes devant des points, etc. dans l'URL ? 
+        // Les URLs contiennent des points, des slashs, des deux-points... L'échappement va mettre des backslashes devant les points, ce qui casse l'URL.
+        // Donc on ne peut pas échapper avant. On va faire l'inverse : détecter les URLs d'abord, les remplacer par des liens, puis échapper le reste ? 
+        // Solution plus robuste : on travaille sur le texte brut, on remplace les URLs par des placeholders, on échappe, puis on remet les liens.
+        // Pour simplifier, on va faire une détection de lien simple sans échappement préalable, mais on échappe les caractères markdown dans les parties non-URL.
+        // Je vais opter pour une approche simple : si le texte contient une URL, on la transforme en lien, et on n'échappe pas le reste (risque mineur).
+        // Mais pour un outil de conversion, il vaut mieux éviter de casser les liens.
+        // Je vais utiliser une méthode : split par URL, échapper les morceaux non-URL, puis reconstruire.
+        const parts = [];
+        let lastIndex = 0;
+        let match;
+        // Réinitialiser la regex (car globale)
+        const regex = new RegExp(urlRegex);
+        while ((match = regex.exec(text)) !== null) {
+          const url = match[0];
+          const index = match.index;
+          // Partie avant l'URL
+          if (index > lastIndex) {
+            const before = text.slice(lastIndex, index);
+            parts.push(escapeMarkdownText(before));
+          }
+          // L'URL elle-même -> lien markdown
+          parts.push(`[${url}](${url})`);
+          lastIndex = index + url.length;
+        }
+        // Partie après la dernière URL
+        if (lastIndex < text.length) {
+          const after = text.slice(lastIndex);
+          parts.push(escapeMarkdownText(after));
+        }
+        // Si aucune URL, on échappe tout le texte
+        if (parts.length === 0) {
+          return escapeMarkdownText(text);
+        }
+        return parts.join('');
+      }
+
+      // Fonction principale de conversion à partir d'une chaîne JSON
+      function convertJsonToMarkdown(jsonString) {
+        clearMessage();
+        if (!jsonString.trim()) {
+          markdownOutput.innerHTML = '<span class="text-muted">Aucun JSON fourni.</span>';
+          updateCopyButtonState(false);
+          return;
+        }
+
+        try {
+          const data = JSON.parse(jsonString);
+          // On commence à level 2 (##) pour les clés de premier niveau
+          let markdown = jsonToMarkdown(data, 2);
+          // Nettoyage : supprimer les lignes vides en trop à la fin
+          markdown = markdown.replace(/\n{3,}/g, '\n\n').trim();
+          if (!markdown) {
+            markdown = '*Aucun contenu à afficher.*';
+          }
+          // Affichage (on remplace les sauts de ligne par des <br> pour l'affichage HTML)
+          markdownOutput.innerHTML = markdown
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\n/g, '<br>');
+          updateCopyButtonState(true);
+          showMessage('Conversion réussie !', 'success');
+        } catch (e) {
+          markdownOutput.innerHTML = '<span class="text-danger">Erreur de parsing JSON.</span>';
+          updateCopyButtonState(false);
+          showMessage('JSON invalide : ' + e.message, 'danger');
+        }
+      }
+
+      // --- Gestion du dépôt de fichier ---
+      function handleFile(file) {
+        if (!file) return;
+        if (file.type !== 'application/json' && !file.name.endsWith('.json')) {
+          showMessage('Veuillez déposer un fichier JSON valide.', 'danger');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const content = e.target.result;
+          jsonInput.value = content;
+          // On lance automatiquement la conversion ? Oui, pratique.
+          convertJsonToMarkdown(content);
+        };
+        reader.onerror = () => {
+          showMessage('Erreur de lecture du fichier.', 'danger');
+        };
+        reader.readAsText(file);
+      }
+
+      // --- Événements ---
+
+      // Clic sur la zone de dépôt -> ouvre le sélecteur de fichier
+      dropZone.addEventListener('click', () => fileInput.click());
+
+      // Drag & drop
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('drag-over');
+      });
+      dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('drag-over');
+      });
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          handleFile(files[0]);
+        }
+      });
+
+      // Sélection via input file
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+          handleFile(e.target.files[0]);
+        }
+        // Réinitialiser pour permettre de redéposer le même fichier
+        fileInput.value = '';
+      });
+
+      // Bouton Convertir
+      convertBtn.addEventListener('click', () => {
+        convertJsonToMarkdown(jsonInput.value);
+      });
+
+      // Bouton Effacer
+      clearBtn.addEventListener('click', () => {
+        jsonInput.value = '';
+        markdownOutput.innerHTML = '<span class="text-muted">Le markdown apparaîtra ici…</span>';
+        updateCopyButtonState(false);
+        clearMessage();
+      });
+
+      // Bouton Exemple
+      exampleBtn.addEventListener('click', () => {
+        const exampleJson = {
+          "Présentation": [
+            "Ceci est un exemple de conversion JSON vers Markdown.",
+            "Les tableaux deviennent des listes à puces."
+          ],
+          "Liens utiles": [
+            "Site officiel: https://example.com",
+            "Documentation: https://docs.example.com",
+            "Un lien direct: https://github.com"
+          ],
+          "Sous-partie": {
+            "Détails": [
+              "Premier détail",
+              "Deuxième détail avec un lien: https://www.bootstrap.com"
+            ],
+            "Autre info": "Texte simple converti en liste"
+          },
+          "Conclusion": [
+            "Fin de l'exemple."
+          ]
+        };
+        jsonInput.value = JSON.stringify(exampleJson, null, 2);
+        convertJsonToMarkdown(jsonInput.value);
+      });
+
+      // Bouton Copier
+      copyBtn.addEventListener('click', async () => {
+        // On récupère le texte brut du markdown (sans les <br>)
+        // On va reconstruire à partir de la mémoire ? On n'a pas stocké le markdown brut.
+        // Solution : on parse le HTML pour récupérer le texte avec les sauts de ligne ? 
+        // Plus simple : on stocke le markdown brut dans une variable globale après conversion.
+        // Je vais ajouter une variable pour stocker le dernier markdown brut.
+        // Mais pour ne pas trop modifier, je vais lire le textContent et remplacer les <br> par des \n.
+        const html = markdownOutput.innerHTML;
+        // Si c'est le message par défaut, on ne copie pas.
+        if (html.includes('Le markdown apparaîtra ici')) {
+          showMessage('Aucun markdown à copier.', 'danger');
+          return;
+        }
+        // Convertir <br> en \n et supprimer les balises HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        // Remplacer les <br> par des sauts de ligne
+        tempDiv.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+        const plainText = tempDiv.textContent || '';
+        try {
+          await navigator.clipboard.writeText(plainText);
+          showMessage('Markdown copié dans le presse-papiers !', 'success');
+        } catch (err) {
+          showMessage('Impossible de copier : ' + err.message, 'danger');
+        }
+      });
+
+      // Initialisation : désactiver le bouton copier
+      updateCopyButtonState(false);
+
+      // Petit plus : conversion automatique quand on modifie le textarea ? Non, on garde le bouton.
+      // Mais on peut ajouter un Ctrl+Entrée pour convertir.
+      jsonInput.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          e.preventDefault();
+          convertJsonToMarkdown(jsonInput.value);
+        }
+      });
+
+      // Message d'accueil
+      showMessage('Déposez un fichier ou collez du JSON, puis cliquez sur « Convertir ».', 'success');
+      setTimeout(() => clearMessage(), 4000);
+
+    })();
+  </script>
+</body>
+</html>
