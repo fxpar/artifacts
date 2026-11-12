@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>JSON Visualizer</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #0d1117;
+    color: #e6edf3;
+    overflow: hidden;
+  }
+
+  #app {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    height: 100vh;
+  }
+
+  /* ============ PANNEAU LATÉRAL ============ */
+  #sidebar {
+    background: #161b22;
+    border-right: 1px solid #30363d;
+    overflow-y: auto;
+    padding: 16px;
+    font-size: 13px;
+  }
+
+  #sidebar h1 {
+    font-size: 16px;
+    margin: 0 0 16px 0;
+    color: #58a6ff;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  .section {
+    margin-bottom: 20px;
+    border-bottom: 1px solid #30363d;
+    padding-bottom: 16px;
+  }
+  .section:last-child { border-bottom: none; }
+
+  .section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #8b949e;
+    margin-bottom: 10px;
+    font-weight: 700;
+  }
+
+  .item-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .item-row label {
+    color: #c9d1d9;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  input[type="color"] {
+    width: 32px;
+    height: 24px;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+  }
+  input[type="color"]::-webkit-color-swatch-wrapper { padding: 2px; }
+  input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
+
+  input[type="number"] {
+    width: 52px;
+    padding: 3px 6px;
+    background: #0d1117;
+    color: #e6edf3;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+
+  .toggle-bold {
+    width: 28px;
+    height: 24px;
+    background: #21262d;
+    color: #8b949e;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 0;
+  }
+  .toggle-bold.active {
+    background: #1f6feb;
+    color: #fff;
+    border-color: #1f6feb;
+  }
+
+  button.action {
+    width: 100%;
+    padding: 8px 12px;
+    background: #21262d;
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: background 0.15s;
+  }
+  button.action:hover { background: #30363d; }
+
+  button.primary {
+    background: #238636;
+    border-color: #2ea043;
+    color: #fff;
+    font-weight: 600;
+  }
+  button.primary:hover { background: #2ea043; }
+
+  /* ============ ZONE PRINCIPALE ============ */
+  #main {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  #editor-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: #161b22;
+    border-bottom: 1px solid #30363d;
+    font-size: 13px;
+  }
+
+  #editor-toolbar .status {
+    margin-left: auto;
+    font-size: 12px;
+    color: #8b949e;
+  }
+  #editor-toolbar .status.ok { color: #3fb950; }
+  #editor-toolbar .status.err { color: #f85149; }
+
+  #split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  #editor-wrap, #preview-wrap {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+  #editor-wrap { border-right: 1px solid #30363d; }
+
+  .pane-header {
+    padding: 6px 12px;
+    background: #0d1117;
+    border-bottom: 1px solid #30363d;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #8b949e;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  #drop-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(31, 111, 235, 0.15);
+    border: 2px dashed #58a6ff;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: #58a6ff;
+    font-weight: 600;
+    z-index: 10;
+    pointer-events: none;
+  }
+  #drop-overlay.active { display: flex; }
+
+  #editor {
+    flex: 1;
+    background: #0d1117;
+    color: #e6edf3;
+    border: none;
+    outline: none;
+    resize: none;
+    padding: 16px;
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    tab-size: 2;
+    overflow: auto;
+  }
+
+  #preview {
+    flex: 1;
+    overflow: auto;
+    padding: 16px;
+    background: #0d1117;
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre;
+  }
+
+  #preview::-webkit-scrollbar,
+  #editor::-webkit-scrollbar,
+  #sidebar::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  #preview::-webkit-scrollbar-thumb,
+  #editor::-webkit-scrollbar-thumb,
+  #sidebar::-webkit-scrollbar-thumb {
+    background: #30363d;
+    border-radius: 5px;
+  }
+  #preview::-webkit-scrollbar-track,
+  #editor::-webkit-scrollbar-track,
+  #sidebar::-webkit-scrollbar-track {
+    background: #0d1117;
+  }
+
+  /* ============ TOKENS JSON ============ */
+  .tok-key       { color: #79c0ff; font-weight: 600; }
+  .tok-string    { color: #a5d6ff; }
+  .tok-number    { color: #ffa657; }
+  .tok-boolean   { color: #ff7b72; font-weight: 600; }
+  .tok-null      { color: #ff7b72; font-style: italic; }
+  .tok-brace     { color: #ffd866; }
+  .tok-bracket   { color: #ffd866; }
+  .tok-colon     { color: #8b949e; }
+  .tok-comma     { color: #8b949e; }
+  .tok-punct     { color: #8b949e; }
+
+  .indent-guide {
+    display: inline-block;
+    width: 0;
+    position: relative;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <h1>⚙ JSON Styler</h1>
+
+    <div class="section">
+      <div class="section-title">Indentation</div>
+      <div class="item-row">
+        <label>Taille (espaces)</label>
+        <input type="number" id="indent-size" min="0" max="12" value="2">
+        <span></span>
+      </div>
+      <div class="item-row">
+        <label>Croissance par niveau</label>
+        <input type="number" id="indent-growth" min="0" max="12" value="0">
+        <span></span>
+      </div>
+      <div class="item-row">
+        <label>Taille de police</label>
+        <input type="number" id="font-size" min="8" max="24" value="13">
+        <span></span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Fond &amp; Texte</div>
+      <div class="item-row">
+        <label>Fond</label>
+        <input type="color" id="bg-color" value="#0d1117">
+        <span></span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Clés</div>
+      <div class="item-row">
+        <label>Couleur</label>
+        <input type="color" id="key-color" value="#79c0ff">
+        <button class="toggle-bold active" data-target="key-bold">B</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Chaînes de caractères</div>
+      <div class="item-row">
+        <label>Couleur</label>
+        <input type="color" id="string-color" value="#a5d6ff">
+        <button class="toggle-bold" data-target="string-bold">B</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Nombres</div>
+      <div class="item-row">
+        <label>Couleur</label>
+        <input type="color" id="number-color" value="#ffa657">
+        <button class="toggle-bold" data-target="number-bold">B</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Booléens</div>
+      <div class="item-row">
+        <label>Couleur</label>
+        <input type="color" id="boolean-color" value="#ff7b72">
+        <button class="toggle-bold active" data-target="boolean-bold">B</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">null</div>
+      <div class="item-row">
+        <label>Couleur</label>
+        <input type="color" id="null-color" value="#ff7b72">
+        <button class="toggle-bold" data-target="null-bold">B</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Accolades { }</div>
+      <div class="item-row">
+        <label>Couleur</label>
+        <input type="color" id="brace-color" value="#ffd866">
+        <button class="toggle-bold active" data-target="brace-bold">B</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Crochets [ ]</div>
+      <div class="item-row">
+        <label>Couleur</label>
+        <input type="color" id="bracket-color" value="#ffd866">
+        <button class="toggle-bold active" data-target="bracket-bold">B</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Deux-points :</div>
+      <div class="item-row">
+        <label>Couleur</label>
+        <input type="color" id="colon-color" value="#8b949e">
+        <button class="toggle-bold" data-target="colon-bold">B</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Virgules ,</div>
+      <div class="item-row">
+        <label>Couleur</label>
+        <input type="color" id="comma-color" value="#8b949e">
+        <button class="toggle-bold" data-target="comma-bold">B</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Presets</div>
+      <button class="action primary" id="preset-dark">🌙 Contraste sombre</button>
+      <button class="action" id="preset-light">☀ Contraste clair</button>
+      <button class="action" id="preset-mono">◐ Monochrome</button>
+      <button class="action" id="preset-neon">✨ Néon</button>
+    </div>
+  </aside>
+
+  <main id="main">
+    <div id="editor-toolbar">
+      <button class="action" id="btn-format" style="width:auto;margin:0;">↻ Formater</button>
+      <button class="action" id="btn-minify" style="width:auto;margin:0;">⇲ Minifier</button>
+      <button class="action" id="btn-copy" style="width:auto;margin:0;">⧉ Copier</button>
+      <button class="action" id="btn-reset" style="width:auto;margin:0;">↺ Reset</button>
+      <span class="status" id="status">Prêt</span>
+    </div>
+    <div id="split">
+      <div id="editor-wrap">
+        <div class="pane-header">
+          <span>JSON — Éditable</span>
+          <span id="editor-info"></span>
+        </div>
+        <textarea id="editor" spellcheck="false"></textarea>
+        <div id="drop-overlay">📁 Déposez un fichier .json ici</div>
+      </div>
+      <div id="preview-wrap">
+        <div class="pane-header">
+          <span>Aperçu stylisé</span>
+        </div>
+        <div id="preview"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- ÉTAT GLOBAL ----------
+  const state = {
+    keyColor:    "#79c0ff",
+    keyBold:     true,
+    stringColor: "#a5d6ff",
+    stringBold:  false,
+    numberColor: "#ffa657",
+    numberBold:  false,
+    booleanColor:"#ff7b72",
+    booleanBold: true,
+    nullColor:   "#ff7b72",
+    nullBold:    false,
+    braceColor:  "#ffd866",
+    braceBold:   true,
+    bracketColor:"#ffd866",
+    bracketBold: true,
+    colonColor:  "#8b949e",
+    colonBold:   false,
+    commaColor:  "#8b949e",
+    commaBold:   false,
+    bgColor:     "#0d1117",
+    indentSize:  2,
+    indentGrowth:0,
+    fontSize:    13
+  };
+
+  // ---------- SÉLECTEURS ----------
+  const $ = id => document.getElementById(id);
+  const editor   = $("editor");
+  const preview  = $("preview");
+  const status   = $("status");
+  const editorInfo = $("editor-info");
+  const dropOverlay = $("drop-overlay");
+
+  const DEFAULT_JSON = `{
+  "nom": "JSON Visualizer",
+  "version": 1.0,
+  "actif": true,
+  "description": null,
+  "auteurs": [
+    "Alice",
+    "Bob"
+  ],
+  "config": {
+    "theme": "sombre",
+    "indentation": 2,
+    "options": {
+      "autoSave": true,
+      "maxSize": 1024,
+      "tags": ["json", "editor", "ui"]
+    }
+  },
+  "statistiques": {
+    "vues": 12345,
+    "note": 4.85,
+    "ratings": [5, 4, 5, 3, 5]
+  }
+}`;
+
+  // ---------- CONSTRUCTION DU HTML STYLISÉ ----------
+  function escapeHtml(s){
+    return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  function styleFor(type, bold){
+    const map = {
+      key:     { color: state.keyColor,     fontWeight: state.keyBold     ? "bold" : "normal" },
+      string:  { color: state.stringColor,  fontWeight: state.stringBold  ? "bold" : "normal" },
+      number:  { color: state.numberColor,  fontWeight: state.numberBold  ? "bold" : "normal" },
+      boolean: { color: state.booleanColor, fontWeight: state.booleanBold ? "bold" : "normal" },
+      null:    { color: state.nullColor,    fontWeight: state.nullBold    ? "bold" : "normal" },
+      brace:   { color: state.braceColor,   fontWeight: state.braceBold   ? "bold" : "normal" },
+      bracket: { color: state.bracketColor, fontWeight: state.bracketBold ? "bold" : "normal" },
+      colon:   { color: state.colonColor,   fontWeight: state.colonBold   ? "bold" : "normal" },
+      comma:   { color: state.commaColor,   fontWeight: state.commaBold   ? "bold" : "normal" }
+    };
+    const s = map[type];
+    if (!s) return "";
+    return `color:${s.color};font-weight:${s.fontWeight};`;
+  }
+
+  // Génère le HTML colorisé à partir d'un objet JS.
+  function renderValue(value, depth){
+    const indentUnit = state.indentSize;
+    // indentation croissante : indentUnit + depth * growth
+    const indentPerLevel = Math.max(0, indentUnit);
+    const pad = " ".repeat(indentPerLevel * depth);
+    const childPad = " ".repeat(indentPerLevel * (depth + 1));
+    const grownPad = " ".repeat(indentPerLevel * depth + (state.indentGrowth * depth));
+
+    if (value === null){
+      return { html: span("null", "null"), lines: 1 };
+    }
+    if (typeof value === "boolean"){
+      return { html: span("boolean", String(value)), lines: 1 };
+    }
+    if (typeof value === "number"){
+      return { html: span("number", formatNumber(value)), lines: 1 };
+    }
+    if (typeof value === "string"){
+      return { html: span("string", JSON.stringify(value)), lines: 1 };
+    }
+    if (Array.isArray(value)){
+      if (value.length === 0){
+        return { html: span("bracket","[") + span("bracket","]"), lines: 1 };
+      }
+      let out = span("bracket","[");
+      out += "\n";
+      value.forEach((v, i) => {
+        const r = renderValue(v, depth + 1);
+        out += childPadWithGrowth(depth + 1) + r.html;
+        if (i < value.length - 1) out += span("comma", ",");
+        out += "\n";
+      });
+      out += padWithGrowth(depth) + span("bracket","]");
+      return { html: out, lines: 0 };
+    }
+    if (typeof value === "object"){
+      const keys = Object.keys(value);
+      if (keys.length === 0){
+        return { html: span("brace","{") + span("brace","}"), lines: 1 };
+      }
+      let out = span("brace","{");
+      out += "\n";
+      keys.forEach((k, i) => {
+        const r = renderValue(value[k], depth + 1);
+        out += childPadWithGrowth(depth + 1)
+             + span("key", JSON.stringify(k))
+             + span("colon", ": ")
+             + r.html;
+        if (i < keys.length - 1) out += span("comma", ",");
+        out += "\n";
+      });
+      out += padWithGrowth(depth) + span("brace","}");
+      return { html: out, lines: 0 };
+    }
+    return { html: escapeHtml(String(value)), lines: 1 };
+  }
+
+  function padWithGrowth(depth){
+    const base = state.indentSize;
+    const growth = state.indentGrowth;
+    const size = base * depth + Math.max(0, growth) * (depth > 0 ? depth - 1 : 0);
+    return " ".repeat(Math.max(0, size));
+  }
+  function childPadWithGrowth(depth){
+    return padWithGrowth(depth);
+  }
+
+  function span(type, text){
+    return `<span class="tok-${type}" style="${styleFor(type)}">${escapeHtml(text)}</span>`;
+  }
+
+  function formatNumber(n){
+    if (Number.isInteger(n)) return String(n);
+    return String(n);
+  }
+
+  // ---------- RENDU ----------
+  let currentJson = null;
+
+  function parseAndRender(){
+    const raw = editor.value.trim();
+    if (!raw){
+      preview.innerHTML = "";
+      setStatus("Vide", "");
+      currentJson = null;
+      updateEditorInfo();
+      return;
+    }
+    try {
+      const parsed = JSON.parse(raw);
+      currentJson = parsed;
+      const r = renderValue(parsed, 0);
+      preview.innerHTML = r.html;
+      // appliquer fond + police
+      preview.style.background = state.bgColor;
+      preview.style.fontSize = state.fontSize + "px";
+      setStatus("✓ JSON valide", "ok");
+    } catch(e){
+      preview.innerHTML = `<span style="color:#f85149;">⚠ JSON invalide : ${escapeHtml(e.message)}</span>`;
+      setStatus("✗ " + e.message, "err");
+      currentJson = null;
+    }
+    updateEditorInfo();
+  }
+
+  function setStatus(txt, cls){
+    status.textContent = txt;
+    status.className = "status" + (cls ? " " + cls : "");
+  }
+
+  function updateEditorInfo(){
+    const raw = editor.value;
+    const lines = raw ? raw.split("\n").length : 0;
+    const chars = raw.length;
+    editorInfo.textContent = `${lines} lignes · ${chars} car.`;
+  }
+
+  // ---------- SYNCHRONISATION UI ----------
+  function bindColor(id, prop){
+    const el = $(id);
+    el.value = state[prop];
+    el.addEventListener("input", () => {
+      state[prop] = el.value;
+      parseAndRender();
+    });
+  }
+  function bindNumber(id, prop, min, max){
+    const el = $(id);
+    el.value = state[prop];
+    el.addEventListener("input", () => {
+      let v = parseInt(el.value, 10);
+      if (isNaN(v)) v = min;
+      v = Math.max(min, Math.min(max, v));
+      state[prop] = v;
+      parseAndRender();
+    });
+  }
+  function bindBold(btnSelector, prop){
+    document.querySelectorAll(btnSelector).forEach(btn => {
+      const target = btn.dataset.target;
+      const stateProp = {
+        "key-bold": "keyBold",
+        "string-bold": "stringBold",
+        "number-bold": "numberBold",
+        "boolean-bold": "booleanBold",
+        "null-bold": "nullBold",
+        "brace-bold": "braceBold",
+        "bracket-bold": "bracketBold",
+        "colon-bold": "colonBold",
+        "comma-bold": "commaBold"
+      }[target];
+      if (!stateProp) return;
+      btn.classList.toggle("active", state[stateProp]);
+      btn.addEventListener("click", () => {
+        state[stateProp] = !state[stateProp];
+        btn.classList.toggle("active", state[stateProp]);
+        parseAndRender();
+      });
+    });
+  }
+
+  function syncUIFromState(){
+    $("key-color").value     = state.keyColor;
+    $("string-color").value  = state.stringColor;
+    $("number-color").value  = state.numberColor;
+    $("boolean-color").value = state.booleanColor;
+    $("null-color").value    = state.nullColor;
+    $("brace-color").value   = state.braceColor;
+    $("bracket-color").value = state.bracketColor;
+    $("colon-color").value   = state.colonColor;
+    $("comma-color").value   = state.commaColor;
+    $("bg-color").value      = state.bgColor;
+    $("indent-size").value   = state.indentSize;
+    $("indent-growth").value = state.indentGrowth;
+    $("font-size").value     = state.fontSize;
+
+    document.querySelectorAll(".toggle-bold").forEach(btn => {
+      const stateProp = {
+        "key-bold": "keyBold",
+        "string-bold": "stringBold",
+        "number-bold": "numberBold",
+        "boolean-bold": "booleanBold",
+        "null-bold": "nullBold",
+        "brace-bold": "braceBold",
+        "bracket-bold": "bracketBold",
+        "colon-bold": "colonBold",
+        "comma-bold": "commaBold"
+      }[btn.dataset.target];
+      if (stateProp) btn.classList.toggle("active", state[stateProp]);
+    });
+  }
+
+  // ---------- ACTIONS ----------
+  $("btn-format").addEventListener("click", () => {
+    try {
+      const obj = JSON.parse(editor.value);
+      editor.value = JSON.stringify(obj, null, 2);
+      parseAndRender();
+    } catch(e){
+      setStatus("✗ " + e.message, "err");
+    }
+  });
+
+  $("btn-minify").addEventListener("click", () => {
+    try {
+      const obj = JSON.parse(editor.value);
+      editor.value = JSON.stringify(obj);
+      parseAndRender();
+    } catch(e){
+      setStatus("✗ " + e.message, "err");
+    }
+  });
+
+  $("btn-copy").addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(editor.value);
+      setStatus("✓ Copié", "ok");
+      setTimeout(() => setStatus("Prêt", ""), 1500);
+    } catch(e){
+      setStatus("✗ Copie impossible", "err");
+    }
+  });
+
+  $("btn-reset").addEventListener("click", () => {
+    editor.value = DEFAULT_JSON;
+    parseAndRender();
+  });
+
+  // ---------- PRESETS ----------
+  const PRESETS = {
+    dark: {
+      bgColor:"#0d1117",
+      keyColor:"#79c0ff", keyBold:true,
+      stringColor:"#a5d6ff", stringBold:false,
+      numberColor:"#ffa657", numberBold:false,
+      booleanColor:"#ff7b72", booleanBold:true,
+      nullColor:"#ff7b72", nullBold:false,
+      braceColor:"#ffd866", braceBold:true,
+      bracketColor:"#ffd866", bracketBold:true,
+      colonColor:"#8b949e", colonBold:false,
+      commaColor:"#8b949e", commaBold:false,
+      fontSize:13, indentSize:2, indentGrowth:0
+    },
+    light: {
+      bgColor:"#ffffff",
+      keyColor:"#0550ae", keyBold:true,
+      stringColor:"#0a3069", stringBold:false,
+      numberColor:"#953800", numberBold:false,
+      booleanColor:"#cf222e", booleanBold:true,
+      nullColor:"#cf222e", nullBold:false,
+      braceColor:"#8250df", braceBold:true,
+      bracketColor:"#8250df", bracketBold:true,
+      colonColor:"#57606a", colonBold:false,
+      commaColor:"#57606a", commaBold:false,
+      fontSize:13, indentSize:2, indentGrowth:0
+    },
+    mono: {
+      bgColor:"#1e1e1e",
+      keyColor:"#d4d4d4", keyBold:true,
+      stringColor:"#d4d4d4", stringBold:false,
+      numberColor:"#d4d4d4", numberBold:false,
+      booleanColor:"#d4d4d4", booleanBold:true,
+      nullColor:"#d4d4d4", nullBold:false,
+      braceColor:"#d4d4d4", braceBold:true,
+      bracketColor:"#d4d4d4", bracketBold:true,
+      colonColor:"#808080", colonBold:false,
+      commaColor:"#808080", commaBold:false,
+      fontSize:13, indentSize:2, indentGrowth:0
+    },
+    neon: {
+      bgColor:"#0a0014",
+      keyColor:"#00ffff", keyBold:true,
+      stringColor:"#39ff14", stringBold:false,
+      numberColor:"#ff00ff", numberBold:true,
+      booleanColor:"#ff073a", booleanBold:true,
+      nullColor:"#ff073a", nullBold:false,
+      braceColor:"#ffff00", braceBold:true,
+      bracketColor:"#ffff00", bracketBold:true,
+      colonColor:"#ff00ff", colonBold:false,
+      commaColor:"#ff00ff", commaBold:false,
+      fontSize:14, indentSize:2, indentGrowth:0
+    }
+  };
+
+  function applyPreset(name){
+    const p = PRESETS[name];
+    if (!p) return;
+    Object.assign(state, p);
+    syncUIFromState();
+    parseAndRender();
+  }
+  $("preset-dark").addEventListener("click", () => applyPreset("dark"));
+  $("preset-light").addEventListener("click", () => applyPreset("light"));
+  $("preset-mono").addEventListener("click", () => applyPreset("mono"));
+  $("preset-neon").addEventListener("click", () => applyPreset("neon"));
+
+  // ---------- DRAG & DROP ----------
+  ["dragenter","dragover"].forEach(evt => {
+    document.addEventListener(evt, e => {
+      e.preventDefault();
+      dropOverlay.classList.add("active");
+    });
+  });
+  ["dragleave","drop"].forEach(evt => {
+    document.addEventListener(evt, e => {
+      e.preventDefault();
+      if (evt === "drop") return;
+      if (e.relatedTarget === null || !document.contains(e.relatedTarget)) {
+        dropOverlay.classList.remove("active");
+      }
+    });
+  });
+  document.addEventListener("drop", e => {
+    e.preventDefault();
+    dropOverlay.classList.remove("active");
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".json") && file.type !== "application/json"){
+      setStatus("✗ Fichier non-JSON", "err");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = ev => {
+      editor.value = ev.target.result;
+      parseAndRender();
+      setStatus("✓ Fichier chargé", "ok");
+    };
+    reader.onerror = () => setStatus("✗ Erreur lecture", "err");
+    reader.readAsText(file);
+  });
+
+  // ---------- INITIALISATION ----------
+  function init(){
+    editor.value = DEFAULT_JSON;
+
+    bindColor("key-color", "keyColor");
+    bindColor("string-color", "stringColor");
+    bindColor("number-color", "numberColor");
+    bindColor("boolean-color", "booleanColor");
+    bindColor("null-color", "nullColor");
+    bindColor("brace-color", "braceColor");
+    bindColor("bracket-color", "bracketColor");
+    bindColor("colon-color", "colonColor");
+    bindColor("comma-color", "commaColor");
+    bindColor("bg-color", "bgColor");
+
+    bindNumber("indent-size", "indentSize", 0, 12);
+    bindNumber("indent-growth", "indentGrowth", 0, 12);
+    bindNumber("font-size", "fontSize", 8, 24);
+
+    bindBold(".toggle-bold");
+
+    // Écoute de l'éditeur (léger debounce)
+    let t = null;
+    editor.addEventListener("input", () => {
+      clearTimeout(t);
+      t = setTimeout(parseAndRender, 120);
+    });
+
+    // Support Tab dans l'éditeur
+    editor.addEventListener("keydown", e => {
+      if (e.key === "Tab"){
+        e.preventDefault();
+        const start = editor.selectionStart;
+        const end   = editor.selectionEnd;
+        editor.value = editor.value.substring(0, start) + "  " + editor.value.substring(end);
+        editor.selectionStart = editor.selectionEnd = start + 2;
+        parseAndRender();
+      }
+    });
+
+    document.body.style.background = state.bgColor;
+    parseAndRender();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
