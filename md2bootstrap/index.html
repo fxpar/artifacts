@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convertisseur Markdown vers Bootstrap 5 (V2 - FontAwesome & Dark Mode Ready)</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome 6 (Standard Moodle) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Parser Marked.js -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        textarea { font-family: monospace; font-size: 13px; }
+        .drop-zone {
+            border: 2px dashed #0d6efd;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+            cursor: pointer;
+        }
+        .drop-zone.dragover {
+            background-color: #e2e3e5;
+            border-color: #0b5ed7;
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+<div class="container-fluid py-4">
+    <header class="mb-4 text-center">
+        <h1 class="h3 fw-bold text-primary"><i class="fa-solid fa-wand-magic-sparkles"></i> Convertisseur de Cours (Moodle & Blackboard)</h1>
+        <p class="text-muted">Générez une mise en page responsive Bootstrap 5 compatible avec le mode sombre/clair et les icônes FontAwesome.</p>
+    </header>
+
+    <div class="row g-3">
+        <!-- Colonne Gauche : Input -->
+        <div class="col-lg-5">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center">
+                    <span><i class="fa-solid fa-file-code"></i> Markdown Source</span>
+                    <label class="btn btn-sm btn-outline-light mb-0">
+                        <i class="fa-solid fa-upload"></i> Charger un fichier .md
+                        <input type="file" id="fileInput" accept=".md,.txt" style="display: none;" onchange="importerFichier(this.files)">
+                    </label>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <!-- Zone de Drag and Drop -->
+                    <div id="dropZone" class="drop-zone p-3 text-center mb-3">
+                        <i class="fa-solid fa-cloud-arrow-up fs-2 text-primary mb-2"></i>
+                        <p class="mb-0 text-muted small">Glissez-déposez votre fichier <strong>.md</strong> ici ou collez votre texte ci-dessous</p>
+                    </div>
+
+                    <textarea id="markdownInput" class="form-control flex-grow-1" style="min-height: 350px;" placeholder="Collez ou déposez votre contenu Markdown ici..."></textarea>
+                    
+                    <button onclick="convertirMD()" class="btn btn-primary mt-3 w-100 fw-bold">
+                        <i class="fa-solid fa-rotate"></i> Convertir en Bootstrap 5
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Colonne Droite : Code HTML Généré -->
+        <div class="col-lg-7">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-dark text-white">
+                    <ul class="nav nav-tabs card-header-tabs" id="outputTabs" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active text-white" id="moodle-tab" data-bs-toggle="tab" data-bs-target="#moodle" type="button">
+                                <i class="fa-solid fa-graduation-cap"></i> Version Moodle (&lt;div&gt;)
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link text-white-50" id="blackboard-tab" data-bs-toggle="tab" data-bs-target="#blackboard" type="button">
+                                <i class="fa-solid fa-globe"></i> Version Blackboard (Complet)
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <div class="tab-content flex-grow-1" id="outputTabContent">
+                        <!-- Moodle Tab -->
+                        <div class="tab-pane fade show active h-100" id="moodle" role="tabpanel">
+                            <textarea id="outputMoodle" class="form-control h-100" readonly></textarea>
+                        </div>
+                        <!-- Blackboard Tab -->
+                        <div class="tab-pane fade h-100" id="blackboard" role="tabpanel">
+                            <textarea id="outputBlackboard" class="form-control h-100" readonly></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons Moodle -->
+                    <div class="d-flex gap-2 mt-3">
+                        <button onclick="copierCode('outputMoodle')" class="btn btn-outline-success flex-grow-1">
+                            <i class="fa-solid fa-copy"></i> Copier Moodle
+                        </button>
+                        <button onclick="telechargerFichier('outputMoodle', 'cours-moodle.html')" class="btn btn-success flex-grow-1">
+                            <i class="fa-solid fa-download"></i> Enregistrer .html (Moodle)
+                        </button>
+                    </div>
+
+                    <!-- Action Buttons Blackboard -->
+                    <div class="d-flex gap-2 mt-2">
+                        <button onclick="copierCode('outputBlackboard')" class="btn btn-outline-info flex-grow-1">
+                            <i class="fa-solid fa-copy"></i> Copier Blackboard
+                        </button>
+                        <button onclick="telechargerFichier('outputBlackboard', 'cours-blackboard.html')" class="btn btn-info text-white flex-grow-1">
+                            <i class="fa-solid fa-download"></i> Enregistrer .html (Blackboard)
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// --- Gestion du Drag and Drop ---
+const dropZone = document.getElementById('dropZone');
+
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, preventDefaults, false);
+});
+
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+['dragenter', 'dragover'].forEach(eventName => {
+    dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+});
+
+dropZone.addEventListener('drop', (e) => {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    importerFichier(files);
+});
+
+function importerFichier(files) {
+    if (files.length > 0) {
+        const file = files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('markdownInput').value = e.target.result;
+            convertirMD();
+        };
+        reader.readAsText(file);
+    }
+}
+
+// --- Conversion Markdown vers Bootstrap 5 ---
+function convertirMD() {
+    const rawMarkdown = document.getElementById('markdownInput').value;
+    
+    // Convertir d'abord le markdown de base en HTML via Marked.js
+    let parsedHTML = marked.parse(rawMarkdown);
+
+    // Remplacement par composants Bootstrap 5 & FontAwesome
+    let bsHTML = parsedHTML
+        // Titres H1 -> Bannière Header
+        .replace(/<h1>(.*?)<\/h1>/g, '<div class="p-4 mb-4 bg-primary text-white rounded-3 shadow-sm"><h1 class="display-6 fw-bold m-0"><i class="fa-solid fa-book-bookmark me-2"></i>$1</h1></div>')
+        // Titres H2 -> Titre adaptable (icône dans le H2 pour hériter de la couleur en mode nuit Moodle)
+        .replace(/<h2>(.*?)<\/h2>/g, '<div class="d-flex align-items-center border-bottom border-primary border-2 pb-2 mt-5 mb-3"><h2 class="h4 m-0 fw-bold"><i class="fa-solid fa-circle-chevron-right me-2"></i>$1</h2></div>')
+        // Titres H3 -> Subsections adaptables
+        .replace(/<h3>(.*?)<\/h3>/g, '<h3 class="h5 fw-bold mt-4 mb-2"><i class="fa-solid fa-chevron-right me-2"></i>$1</h3>')
+        // Tableaux -> Bootstrap 5 Responsive & Stylisés
+        .replace(/<table>/g, '<div class="table-responsive my-3"><table class="table table-hover table-striped align-middle border shadow-sm">')
+        .replace(/<\/table>/g, '</table></div>')
+        .replace(/<thead>/g, '<thead class="table-primary text-body">')
+        // Blockquotes -> Encarts d'alerte / Réflexion Bootstrap
+        .replace(/<blockquote>\s*<p>(.*?)<\/p>\s*<\/blockquote>/gs, '<div class="alert alert-info border-start border-4 border-info shadow-sm my-3"><div class="d-flex"><i class="fa-solid fa-lightbulb fs-3 me-3 text-info"></i><div>$1</div></div></div>')
+        // Unordered lists -> Checklists / Listes modernes adaptables
+        .replace(/<ul>/g, '<ul class="list-group list-group-flush mb-3 shadow-sm rounded">')
+        .replace(/<\/ul>/g, '</ul>')
+        .replace(/<li>/g, '<li class="list-group-item d-flex align-items-start"><i class="fa-solid fa-check text-primary me-2 mt-1"></i><span>')
+        .replace(/<\/li>/g, '</span></li>')
+        // Checkboxes [ ] ou [x]
+        .replace(/\[ \]/g, '<input type="checkbox" class="form-check-input me-2" disabled>')
+        .replace(/\[x\]/g, '<input type="checkbox" class="form-check-input me-2" checked disabled>')
+        // Blocs de code
+        .replace(/<pre><code>/g, '<div class="card bg-dark text-light mb-3"><div class="card-body p-3"><pre class="m-0 text-light"><code>')
+        .replace(/<\/code><\/pre>/g, '</code></pre></div></div>');
+
+    // Nettoyage et encapsulation pour Moodle
+    const moodleContainer = `<div class="container my-4 fs-6">\n${bsHTML}\n</div>`;
+
+    // En-tête complet pour Blackboard
+    const blackboardFullPage = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support de Cours</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+${moodleContainer}
+
+    <!-- Popper.js & Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"><\/script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"><\/script>
+</body>
+</html>`;
+
+    document.getElementById('outputMoodle').value = moodleContainer;
+    document.getElementById('outputBlackboard').value = blackboardFullPage;
+}
+
+// --- Fonctions utilitaires ---
+function copierCode(idElement) {
+    const textarea = document.getElementById(idElement);
+    textarea.select();
+    navigator.clipboard.writeText(textarea.value);
+    alert("Code copié dans le presse-papier !");
+}
+
+function telechargerFichier(idElement, nomFichier) {
+    const contenu = document.getElementById(idElement).value;
+    if (!contenu) {
+        alert("Aucun contenu à enregistrer !");
+        return;
+    }
+    const blob = new Blob([contenu], { type: 'text/html;charset=utf-8;' });
+    const lien = document.createElement("a");
+    lien.href = URL.createObjectURL(blob);
+    lien.download = nomFichier;
+    lien.click();
+    URL.revokeObjectURL(lien.href);
+}
+</script>
+</body>
+</html>
