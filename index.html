@@ -1,87 +1,313 @@
-<<<<<<< HEAD
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
-	<title></title>
-	<meta charset="UTF-8">
-	<meta name="description" content="">
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Artifacts — outils pour enseignants</title>
+<meta name="description" content="Petits outils web gratuits pour enseignants et formateurs : Moodle, Blackboard, supports de cours, tableaux et données. Tout fonctionne dans le navigateur.">
+<style>
+:root {
+  --bg: #f6f7fb; --surface: #ffffff; --text: #1e2330; --muted: #5f6878; --border: #e3e6ee;
+  --accent: #4f46e5; --accent-soft: #eef0ff; --chip: #f1f3f8; --warn: #9a5b00; --warn-soft: #fff6e5;
+  --sidebar: 270px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12141b; --surface: #1b1e27; --text: #e7e9ef; --muted: #9aa2b2; --border: #2c303c;
+    --accent: #8b87ff; --accent-soft: #25264a; --chip: #262a36; --warn: #f3b562; --warn-soft: #33270f;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12141b; --surface: #1b1e27; --text: #e7e9ef; --muted: #9aa2b2; --border: #2c303c;
+  --accent: #8b87ff; --accent-soft: #25264a; --chip: #262a36; --warn: #f3b562; --warn-soft: #33270f;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 1rem; }
+body { margin: 0; font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+a { color: var(--accent); }
+
+/* ---------- Sidebar ---------- */
+.sidebar {
+  position: fixed; inset: 0 auto 0 0; width: var(--sidebar); overflow-y: auto;
+  background: var(--surface); border-right: 1px solid var(--border); padding: 1.5rem 1rem;
+}
+.brand { display: flex; align-items: center; gap: .6rem; text-decoration: none; color: var(--text); font-weight: 800; font-size: 1.15rem; margin: 0 .5rem 1.25rem; }
+.brand span { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: .6rem; background: var(--accent); color: #fff; font-size: 1rem; }
+.search { width: 100%; padding: .55rem .75rem; border: 1px solid var(--border); border-radius: .6rem; background: var(--bg); color: var(--text); font: inherit; font-size: .9rem; margin-bottom: 1rem; }
+.nav-group { margin-bottom: .75rem; }
+.nav-group > a { display: block; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); text-decoration: none; padding: .35rem .5rem; }
+.nav-group ul { list-style: none; margin: 0; padding: 0; }
+.nav-group li a { display: block; padding: .3rem .5rem .3rem 1rem; border-radius: .45rem; color: var(--text); text-decoration: none; font-size: .9rem; }
+.nav-group li a:hover, .nav-group li a.active { background: var(--accent-soft); color: var(--accent); }
+.nav-extra { border-top: 1px solid var(--border); margin-top: 1rem; padding-top: 1rem; }
+.theme-btn { margin-top: 1rem; width: 100%; padding: .45rem; border: 1px solid var(--border); border-radius: .6rem; background: none; color: var(--muted); font: inherit; font-size: .85rem; cursor: pointer; }
+
+/* ---------- Main ---------- */
+main { margin-left: var(--sidebar); padding: 2.5rem clamp(1rem, 4vw, 3.5rem) 4rem; max-width: calc(var(--sidebar) + 1000px); }
+.hero h1 { font-size: clamp(1.8rem, 4vw, 2.5rem); line-height: 1.15; margin: 0 0 .75rem; }
+.hero p { color: var(--muted); font-size: 1.08rem; margin: 0 0 1rem; max-width: 46rem; }
+.notice { display: flex; gap: .8rem; background: var(--accent-soft); border-radius: .9rem; padding: 1rem 1.2rem; margin: 1.5rem 0 2.5rem; max-width: 52rem; }
+.notice .notice-title { display: block; font-weight: 700; }
+.notice p { margin: .2rem 0 0; font-size: .95rem; }
+section { margin-bottom: 2.75rem; }
+h2 { font-size: 1.35rem; margin: 0 0 1rem; padding-bottom: .4rem; border-bottom: 2px solid var(--border); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: 1rem; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: .9rem; padding: 1.1rem 1.2rem; display: flex; flex-direction: column; gap: .55rem; transition: border-color .15s, transform .15s; scroll-margin-top: 1rem; }
+.card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.card h3 { margin: 0; font-size: 1.05rem; }
+.card h3 a { color: var(--text); text-decoration: none; }
+.card h3 a:hover { color: var(--accent); }
+.card p { margin: 0; color: var(--muted); font-size: .92rem; flex-grow: 1; }
+.chips { display: flex; flex-wrap: wrap; gap: .35rem; }
+.chip { font-size: .72rem; background: var(--chip); color: var(--muted); padding: .15rem .55rem; border-radius: 999px; }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.links { display: flex; gap: 1rem; font-size: .85rem; font-weight: 600; }
+.links a { text-decoration: none; }
+.links a:hover { text-decoration: underline; }
+table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: .9rem; overflow: hidden; font-size: .92rem; }
+th, td { text-align: left; padding: .6rem .9rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { background: var(--chip); font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+tr:last-child td { border-bottom: none; }
+.prose p, .prose ul { max-width: 50rem; }
+footer { color: var(--muted); font-size: .85rem; border-top: 1px solid var(--border); padding-top: 1.25rem; }
+.empty { color: var(--muted); font-style: italic; display: none; }
+
+/* ---------- Mobile ---------- */
+.menu-btn { display: none; }
+@media (max-width: 900px) {
+  .sidebar { transform: translateX(-100%); transition: transform .2s; z-index: 20; box-shadow: 0 0 40px rgba(0,0,0,.2); }
+  body.nav-open .sidebar { transform: none; }
+  main { margin-left: 0; padding-top: 4.5rem; }
+  .menu-btn { display: flex; align-items: center; gap: .5rem; position: fixed; top: .8rem; left: 1rem; z-index: 30; padding: .5rem .9rem; border-radius: .6rem; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; font-weight: 600; cursor: pointer; }
+  table { display: block; overflow-x: auto; }
+}
+</style>
 </head>
-
 <body>
-<div class="container">
-<h1>Artifacts</h1>
-<div>Artefacts (petits outils) créés par IA pour différentes utilités</div>
-<h2>Moodle</h2>
-<ul>
-	<li><a href="moodle-xml-selecteur">Sélecteur questions moodle par catégorie, tag, type</a>: Obtenir les questions moodle filtrées sur certaines catégories et certains tags et certains types, à partir d'un grand fichier de questions. Inclus une prévisualisation des questions.</li>
-	<li><a href="moodle-cloze-html">Moodle cloze en html:</a>Convertit les questions cloze de moodle en question accessible sur une page web hors moodle. (Utile pour les écoles qui n'ont pas de plateforme).</li>
-	<li><a href="moodle-xml-traduction">moodle-xml-traduction:</a>(imparfait) Permet d'avoir un fichier de questions allégé (sans les images) pour le faire traduire par une IA et le réinjecter dans moodle. (il y a des erreurs qui bloquent lors du réimport... impossible de voir pourquoi).</li>
-	<li><a href="moodle-xml-text">Extrait le maximum de texte du fichier d'une banque de question. Utilité: permet de donner les questions à une IA qui va construire le support de cours correspondant aux évaluations</a></li>
-</ul>
 
-<h2>Blackboard</h2>
-<ul>
-<li><a href="moodle-cloze-blackboard-fill-blank">moodle-cloze-blackboard-fill-blank</a>Convertit un fichier xml de questions cloze moodle en questions "FIB" (Texte à trou, fill in the blank) de Blackboard. Le résultat n'est pas un fichier d'import, mais le texte de la question à copier-coller (en texte brut Ctrl+maj+V) dans les questions FIB, qui est parfaitement traité en faisant "étape suivante" (next step) dans blackboard.</li>
-</ul>
-	
-<h2>Chinois</h2>
-<ul>
-	<li><a href="chinois-pinyin-tons">Chinois Pynyin tons</a></li>
-	<li><a href="chinois-simp-trad">Chinois Convertisseur simplifié - traditionnel</a></li>
-</ul>
-<h2>Divers</h2>
-<ul>
-	<li><a href="data-en-cards">data-en-cards</a>: Remplit des modèles de "cartes" à partir de données json ou csv</li>
-	<li><a href="word-sans-titres">word-sans-titres</a>: Retire le "niveau de titre" tout en conservant la mise en forme (utile pour créer un exercice où les étudiants doivent refaire la table des matières)</li>
-	<li><a href="tableau-excel-word-html">tableau-excel-word-html</a>: convertit des tableaux Excel ou Word en html, en choisissant des paramètres: ajouter les numéros de ligne et lettre des colonne, conserver les formats, les symboles monétaires...</li>
-	<li><a href="tableaux-excel-word-markdown-json-csv">tableaux-excel-word-markdown-json-csv</a>: permet de transformer différents tableaux Excel / Word en markdown, csv ou json</li>
-	<li><a href="markdown-html">markdown-html</a>: Convertit du markdown en html: attention, beaucoup de caractères sont transformé en entité (l'apostrophe et les accents sont convertis pour avoir un format html strict)</li>
-</ul>
-	</div>
+<button class="menu-btn" onclick="document.body.classList.toggle('nav-open')" aria-label="Menu">☰ Menu</button>
+
+<nav class="sidebar" id="sidebar">
+  <a class="brand" href="#top"><span>⚒</span> Artifacts</a>
+  <input class="search" id="search" type="search" placeholder="Rechercher un outil…" aria-label="Rechercher un outil">
+  <div id="nav"></div>
+  <div class="nav-extra nav-group">
+    <a href="#confidentialite">Confidentialité</a>
+    <a href="#bibliotheques">Bibliothèques utilisées</a>
+    <a href="#licence">Licence</a>
+    <a href="https://github.com/fxpar/artifacts">Code source sur GitHub ↗</a>
+  </div>
+  <button class="theme-btn" id="themeBtn">◐ Thème clair / sombre</button>
+</nav>
+
+<main id="top">
+  <header class="hero">
+    <h1>Petits outils pour enseignants et formateurs</h1>
+    <p>Des outils web simples, créés avec l'aide de l'IA, pour gagner du temps au quotidien : préparer des questions Moodle, analyser une enquête Blackboard, mettre en forme un support de cours, convertir des tableaux…</p>
+    <p>Chaque outil est une page HTML autonome : il s'ouvre dans le navigateur, sans installation ni compte. Gratuits et libres.</p>
+  </header>
+
+  <div class="notice" id="confidentialite">
+    <div style="font-size:1.6rem">🔒</div>
+    <div>
+      <span class="notice-title">Vos données restent chez vous</span>
+      <p>Les fichiers que vous déposez (questions, enquêtes, tableaux…) sont traités <strong>dans votre navigateur</strong> et ne sont envoyés à aucun serveur. Seuls les outils marqués <span class="chip warn">réseau</span> communiquent avec un service extérieur, et ils l'indiquent : l'analyse IA de l'échiquier v3 (position envoyée à Google Gemini avec votre propre clé) et ShieldForge (téléchargement des icônes depuis Iconify).</p>
+    </div>
+  </div>
+
+  <div id="tools"></div>
+  <p class="empty" id="empty">Aucun outil ne correspond à votre recherche.</p>
+
+  <section id="bibliotheques" class="prose">
+    <h2>Bibliothèques utilisées</h2>
+    <p>Les outils s'appuient sur des bibliothèques libres, chargées depuis un CDN public (jsDelivr, unpkg, cdnjs…). Merci à leurs auteurs.</p>
+    <table>
+      <thead><tr><th>Bibliothèque</th><th>Rôle</th><th>Utilisée par</th></tr></thead>
+      <tbody id="libs"></tbody>
+    </table>
+  </section>
+
+  <section id="licence" class="prose">
+    <h2>Licence</h2>
+    <p>Ces outils sont publiés sous <a href="https://github.com/fxpar/artifacts/blob/main/LICENSE">licence MIT</a> : vous pouvez les utiliser, les copier, les modifier et les redistribuer librement, y compris à des fins commerciales, à condition de conserver la mention de copyright. Ils sont fournis sans garantie.</p>
+  </section>
+
+  <footer>
+    © 2026 François Parlant · <a href="https://github.com/fxpar/artifacts">github.com/fxpar/artifacts</a> · Voir aussi <a href="https://github.com/fxpar/abc-notation-artifacts">abc-notation-artifacts</a> (notation musicale ABC).
+  </footer>
+</main>
+
+<script>
+const REPO = 'https://github.com/fxpar/artifacts/tree/main/';
+
+const LIBS = {
+  tailwind:   { name: 'Tailwind CSS', url: 'https://tailwindcss.com', role: 'Mise en page' },
+  daisyui:    { name: 'daisyUI', url: 'https://daisyui.com', role: 'Composants pour Tailwind' },
+  bootstrap:  { name: 'Bootstrap 5', url: 'https://getbootstrap.com', role: 'Mise en page et composants' },
+  bsicons:    { name: 'Bootstrap Icons', url: 'https://icons.getbootstrap.com', role: 'Icônes' },
+  fontawesome:{ name: 'Font Awesome', url: 'https://fontawesome.com', role: 'Icônes' },
+  sheetjs:    { name: 'SheetJS', url: 'https://sheetjs.com', role: 'Lecture des fichiers Excel' },
+  chartjs:    { name: 'Chart.js', url: 'https://www.chartjs.org', role: 'Graphiques' },
+  marked:     { name: 'Marked', url: 'https://marked.js.org', role: 'Markdown → HTML' },
+  turndown:   { name: 'Turndown', url: 'https://github.com/mixmark-io/turndown', role: 'HTML → Markdown' },
+  jquery:     { name: 'jQuery', url: 'https://jquery.com', role: 'Manipulation de la page' },
+  chessjs:    { name: 'chess.js', url: 'https://github.com/jhlywa/chess.js', role: 'Règles des échecs, lecture PGN' },
+  chessboard: { name: 'chessboard.js', url: 'https://chessboardjs.com', role: 'Affichage de l\'échiquier' },
+  pinyinpro:  { name: 'pinyin-pro', url: 'https://github.com/zh-lx/pinyin-pro', role: 'Conversion hanzi → pinyin' },
+  opencc:     { name: 'OpenCC-js', url: 'https://github.com/nk2028/opencc-js', role: 'Conversion simplifié ↔ traditionnel' },
+  jszip:      { name: 'JSZip', url: 'https://stuk.github.io/jszip/', role: 'Lecture / écriture des fichiers Word (.docx)' },
+  filesaver:  { name: 'FileSaver.js', url: 'https://github.com/eligrey/FileSaver.js', role: 'Téléchargement des fichiers produits' },
+  iconify:    { name: 'Iconify (API)', url: 'https://iconify.design', role: 'Récupération des icônes en SVG' },
+  gemini:     { name: 'Google Gemini (API)', url: 'https://ai.google.dev', role: 'Analyse IA de la position' },
+  pypdf:      { name: 'pypdf (Python)', url: 'https://pypdf.readthedocs.io', role: 'Lecture et écriture des PDF' },
+  gradio:     { name: 'Gradio (Python)', url: 'https://www.gradio.app', role: 'Interface web locale des scripts' },
+};
+
+const CATEGORIES = [
+  { id: 'moodle', title: 'Moodle', tools: [
+    { name: 'Sélecteur de questions', path: 'moodle-xml-selecteur/', folder: 'moodle-xml-selecteur', libs: ['tailwind'],
+      desc: 'Extrait d\'une grosse banque de questions Moodle (XML) les questions de certaines catégories, étiquettes et types, avec prévisualisation.' },
+    { name: 'Questions Cloze en HTML', path: 'moodle-cloze-html/quiz.html', folder: 'moodle-cloze-html', libs: [],
+      desc: 'Transforme des questions Cloze Moodle en quiz sur une page web autonome, pour les écoles sans plateforme.' },
+    { name: 'Texte d\'une banque de questions', path: 'moodle-xml-text/', folder: 'moodle-xml-text', libs: [],
+      desc: 'Extrait tout le texte d\'une banque de questions, par exemple pour demander à une IA de rédiger le support de cours correspondant aux évaluations.' },
+    { name: 'Traduction de questions', path: 'moodle-xml-traduction/', folder: 'moodle-xml-traduction', libs: [], beta: true,
+      desc: 'Allège un fichier de questions (sans images) pour le faire traduire par une IA puis le réimporter. Certains réimports échouent encore.' },
+  ]},
+  { id: 'blackboard', title: 'Blackboard', tools: [
+    { name: 'Rapport d\'enquête Blackboard', path: 'blackboard-forms/', folder: 'blackboard-forms', libs: ['tailwind', 'sheetjs'],
+      desc: 'Transforme l\'export CSV / Excel d\'une enquête Blackboard en rapport imprimable : graphiques pour les questions à choix, citations anonymisées pour les réponses libres.' },
+    { name: 'Cloze Moodle → texte à trous', path: 'moodle-cloze-blackboard-fill-blank/', folder: 'moodle-cloze-blackboard-fill-blank', libs: [],
+      desc: 'Convertit des questions Cloze Moodle en questions « Fill in the blank » Blackboard : texte à coller (Ctrl+Maj+V) dans la question, puis « Étape suivante ».' },
+  ]},
+  { id: 'cours', title: 'Supports de cours', tools: [
+    { name: 'Md2Bootstrap', path: 'md2bootstrap/', folder: 'md2bootstrap', libs: ['marked', 'bootstrap', 'fontawesome', 'bsicons'],
+      desc: 'Met en forme un support de cours Markdown (rédigé par une IA, par exemple) avec Bootstrap 5 : bloc pour Moodle ou page complète pour Blackboard.' },
+    { name: 'Markdown ↔ HTML', path: 'markdown-html/', folder: 'markdown-html', libs: ['marked', 'turndown'],
+      desc: 'Convertit du Markdown en HTML et inversement ; accents et apostrophes sont convertis en entités pour un HTML strict.' },
+    { name: 'Word sans titres', path: 'word-sans-titres/', folder: 'word-sans-titres', libs: ['jszip', 'filesaver'],
+      desc: 'Retire les niveaux de titre d\'un document Word en gardant la mise en forme : idéal pour un exercice où les étudiants refont la table des matières.' },
+    { name: 'Données en cartes', path: 'data-en-cards/', folder: 'data-en-cards', libs: ['bootstrap', 'jquery'],
+      desc: 'Remplit un modèle de carte à partir de données JSON ou CSV, puis imprime les cartes en PDF.' },
+    { name: 'Radar de compétences', path: 'test-recrutement-radar/test-IA.html', folder: 'test-recrutement-radar', libs: ['tailwind', 'chartjs'],
+      desc: 'Crée un graphique radar à partir d\'un référentiel de compétences et de résultats de tests.' },
+  ]},
+  { id: 'donnees', title: 'Tableaux et données', tools: [
+    { name: 'Tableau Excel / Word → HTML', path: 'tableau-excel-word-html/', folder: 'tableau-excel-word-html', libs: [],
+      desc: 'Convertit un tableau Excel ou Word en HTML : numéros de ligne et lettres de colonne, formats, symboles monétaires…' },
+    { name: 'Tableaux → Markdown, CSV, JSON', path: 'tableaux-excel-word-markdown-json-csv/', folder: 'tableaux-excel-word-markdown-json-csv', libs: ['tailwind', 'daisyui'],
+      desc: 'Convertit des tableaux Excel ou Word en Markdown, CSV ou JSON.' },
+    { name: 'JSON → Markdown', path: 'json-to-markdown/', folder: 'json-to-markdown', libs: ['bootstrap', 'bsicons'],
+      desc: 'Rend un fichier JSON lisible : les clés deviennent des titres, les tableaux des listes, les liens restent cliquables.' },
+    { name: 'JSON Visualizer', path: 'json-visualizer/', folder: 'json-visualizer', libs: [],
+      desc: 'Affiche un JSON en grand et en couleur, pour zoomer dessus à l\'écran (créé pour une vidéo).' },
+    { name: 'Yahoo Finance → Excel', path: 'yahoo-finance-html-excel/', folder: 'yahoo-finance-html-excel', libs: [],
+      desc: 'Nettoie le tableau d\'historique des cours copié depuis Yahoo Finance (sans dividendes) et le prépare pour Excel.' },
+  ]},
+  { id: 'chinois', title: 'Chinois', tools: [
+    { name: 'Hanzi → pinyin', path: 'chinois-pinyin-tons/', folder: 'chinois-pinyin-tons', libs: ['pinyinpro'],
+      desc: 'Ajoute le pinyin avec les tons à un texte chinois : après chaque caractère, au-dessus (ruby) ou en fin de texte.' },
+    { name: 'Simplifié → traditionnel', path: 'chinois-simp-trad/', folder: 'chinois-simp-trad', libs: ['opencc'],
+      desc: 'Convertit un texte en caractères simplifiés vers les caractères traditionnels.' },
+  ]},
+  { id: 'graphisme', title: 'Graphisme', tools: [
+    { name: 'ShieldForge', path: 'shield-generator/', folder: 'shield-generator', libs: ['tailwind', 'fontawesome', 'bsicons', 'iconify'], network: true,
+      desc: 'Crée des blasons et badges personnalisés (icônes, forme, banderole, thèmes) et les exporte en SVG ou PNG.' },
+  ]},
+  { id: 'echecs', title: 'Échecs et démos d\'IA', tools: [
+    { name: 'Parties d\'échecs célèbres', path: 'echec-parties-celebres/echec-v2.html', folder: 'echec-parties-celebres', libs: ['chessjs', 'chessboard', 'jquery'],
+      desc: 'Lecteur de parties célèbres, pas à pas, avec cimetière des pièces.',
+      extra: [['v1', 'echec-parties-celebres/echec-v1.html'], ['v2', 'echec-parties-celebres/echec-v2.html']] },
+    { name: 'Échecs v3 : analyse par IA', path: 'echec-parties-celebres/echec-v3.html', folder: 'echec-parties-celebres', libs: ['chessjs', 'chessboard', 'jquery', 'gemini'], network: true,
+      desc: 'Démo pour les étudiants : en pleine partie, l\'application interroge une IA par API et affiche trois scénarios (agressif, sournois, erreur à éviter). Nécessite votre clé Gemini.' },
+    { name: 'Chess famous games reader', path: 'chess-famous-games-reader/chess-v2.html', folder: 'chess-famous-games-reader', libs: ['chessjs', 'chessboard', 'jquery'],
+      desc: 'Version anglaise du lecteur de parties.',
+      extra: [['v1', 'chess-famous-games-reader/chess-v1.html'], ['v2', 'chess-famous-games-reader/chess-v2.html']] },
+  ]},
+  { id: 'python', title: 'Scripts Python', tools: [
+    { name: 'pdf-manipulator', path: null, folder: 'pdf-manipulator', libs: ['pypdf', 'gradio'],
+      desc: 'Scripts pour gérer les signets de gros PDF (recueils de partitions notamment) : extraction des sommaires et des pages, injection d\'index. À exécuter avec Python sur votre ordinateur.' },
+  ]},
+];
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const slug = t => t.folder + (t.path && t.path.includes('v3') ? '-v3' : '');
+
+// ---- Rendu des cartes et de la navigation ----
+document.getElementById('tools').innerHTML = CATEGORIES.map(cat => `
+  <section id="${cat.id}" data-cat>
+    <h2>${esc(cat.title)}</h2>
+    <div class="grid">${cat.tools.map(t => `
+      <article class="card" id="${slug(t)}" data-search="${esc((t.name + ' ' + t.desc + ' ' + cat.title + ' ' + t.libs.map(l => LIBS[l].name).join(' ')).toLowerCase())}">
+        <h3>${t.path ? `<a href="${t.path}">${esc(t.name)}</a>` : esc(t.name)}</h3>
+        <p>${esc(t.desc)}</p>
+        <div class="chips">
+          ${t.network ? '<span class="chip warn">réseau</span>' : ''}${t.beta ? '<span class="chip warn">imparfait</span>' : ''}
+          ${t.libs.length ? t.libs.map(l => `<span class="chip">${esc(LIBS[l].name)}</span>`).join('') : '<span class="chip">JavaScript seul</span>'}
+        </div>
+        <div class="links">
+          ${t.path ? `<a href="${t.path}">Ouvrir →</a>` : ''}
+          ${(t.extra || []).map(([l, p]) => `<a href="${p}">${l}</a>`).join('')}
+          <a href="${REPO + t.folder}">Code et notice</a>
+        </div>
+      </article>`).join('')}
+    </div>
+  </section>`).join('');
+
+document.getElementById('nav').innerHTML = CATEGORIES.map(cat => `
+  <div class="nav-group" data-navcat="${cat.id}">
+    <a href="#${cat.id}">${esc(cat.title)}</a>
+    <ul>${cat.tools.map(t => `<li data-navtool="${slug(t)}"><a href="#${slug(t)}">${esc(t.name)}</a></li>`).join('')}</ul>
+  </div>`).join('');
+
+// ---- Tableau des bibliothèques ----
+document.getElementById('libs').innerHTML = Object.entries(LIBS).map(([k, lib]) => {
+  const users = CATEGORIES.flatMap(c => c.tools).filter(t => t.libs.includes(k)).map(t => t.name);
+  return `<tr><td><a href="${lib.url}">${esc(lib.name)}</a></td><td>${esc(lib.role)}</td><td>${esc([...new Set(users)].join(', '))}</td></tr>`;
+}).join('');
+
+// ---- Recherche ----
+document.getElementById('search').addEventListener('input', e => {
+  const q = e.target.value.trim().toLowerCase();
+  let visible = 0;
+  document.querySelectorAll('.card').forEach(card => {
+    const show = !q || card.dataset.search.includes(q);
+    card.style.display = show ? '' : 'none';
+    document.querySelector(`[data-navtool="${card.id}"]`).style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  document.querySelectorAll('[data-cat]').forEach(sec => {
+    const any = [...sec.querySelectorAll('.card')].some(c => c.style.display !== 'none');
+    sec.style.display = any ? '' : 'none';
+    document.querySelector(`[data-navcat="${sec.id}"]`).style.display = any ? '' : 'none';
+  });
+  document.getElementById('empty').style.display = visible ? 'none' : 'block';
+});
+
+// ---- Mobile : fermer le menu après un clic ----
+document.getElementById('sidebar').addEventListener('click', e => {
+  if (e.target.closest('a')) document.body.classList.remove('nav-open');
+});
+
+// ---- Lien actif dans la navigation ----
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(en => {
+    if (!en.isIntersecting) return;
+    document.querySelectorAll('.nav-group a.active').forEach(a => a.classList.remove('active'));
+    const link = document.querySelector(`.nav-group a[href="#${en.target.id}"]`);
+    if (link) link.classList.add('active');
+  });
+}, { rootMargin: '0px 0px -70% 0px' });
+document.querySelectorAll('[data-cat]').forEach(s => observer.observe(s));
+
+// ---- Thème ----
+const root = document.documentElement;
+try { const saved = localStorage.getItem('artifacts.theme'); if (saved) root.dataset.theme = saved; } catch (e) {}
+document.getElementById('themeBtn').addEventListener('click', () => {
+  const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  root.dataset.theme = dark ? 'light' : 'dark';
+  try { localStorage.setItem('artifacts.theme', root.dataset.theme); } catch (e) {}
+});
+</script>
 </body>
 </html>
-=======
-<!DOCTYPE html>
-<html lang="en">
-<head>
-	<title></title>
-	<meta charset="UTF-8">
-	<meta name="description" content="">
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-</head>
-
-<body>
-<div class="container">
-<h1>Artifacts</h1>
-<div>Artefacts (petits outils) créés par IA pour différentes utilités</div>
-<h2>Moodle</h2>
-<ul>
-	<li><a href="moodle-xml-selecteur">Sélecteur questions moodle par catégorie, tag, type</a>: Obtenir les questions moodle filtrées sur certaines catégories et certains tags et certains types, à partir d'un grand fichier de questions. Inclus une prévisualisation des questions.</li>
-	<li><a href="moodle-cloze-html">Moodle cloze en html:</a>Convertit les questions cloze de moodle en question accessible sur une page web hors moodle. (Utile pour les écoles qui n'ont pas de plateforme).</li>
-	<li><a href="moodle-xml-traduction">moodle-xml-traduction:</a>(imparfait) Permet d'avoir un fichier de questions allégé (sans les images) pour le faire traduire par une IA et le réinjecter dans moodle. (il y a des erreurs qui bloquent lors du réimport... impossible de voir pourquoi).</li>
-	<li><a href="moodle-xml-text">Extrait le maximum de texte du fichier d'une banque de question. Utilité: permet de donner les questions à une IA qui va construire le support de cours correspondant aux évaluations</a></li>
-</ul>
-
-<h2>Blackboard</h2>
-<ul>
-<li><a href="moodle-cloze-blackboard-fill-blank">moodle-cloze-blackboard-fill-blank</a>Convertit un fichier xml de questions cloze moodle en questions "FIB" (Texte à trou, fill in the blank) de Blackboard. Le résultat n'est pas un fichier d'import, mais le texte de la question à copier-coller (en texte brut Ctrl+maj+V) dans les questions FIB, qui est parfaitement traité en faisant "étape suivante" (next step) dans blackboard.</li>
-</ul>
-	
-<h2>Chinois</h2>
-<ul>
-	<li><a href="chinois-pinyin-tons">Chinois Pynyin tons</a></li>
-	<li><a href="chinois-simp-trad">Chinois Convertisseur simplifié - traditionnel</a></li>
-</ul>
-<h2>Divers</h2>
-<ul>
-	<li><a href="data-en-cards">data-en-cards</a>: Remplit des modèles de "cartes" à partir de données json ou csv</li>
-	<li><a href="word-sans-titres">word-sans-titres</a>: Retire le "niveau de titre" tout en conservant la mise en forme (utile pour créer un exercice où les étudiants doivent refaire la table des matières)</li>
-	<li><a href="tableau-excel-word-html">tableau-excel-word-html</a>: convertit des tableaux Excel ou Word en html, en choisissant des paramètres: ajouter les numéros de ligne et lettre des colonne, conserver les formats, les symboles monétaires...</li>
-	<li><a href="tableaux-excel-word-markdown-json-csv">tableaux-excel-word-markdown-json-csv</a>: permet de transformer différents tableaux Excel / Word en markdown, csv ou json</li>
-	<li><a href="markdown-html">markdown-html</a>: Convertit du markdown en html: attention, beaucoup de caractères sont transformé en entité (l'apostrophe et les accents sont convertis pour avoir un format html strict)</li>
-</ul>
-	</div>
-</body>
-</html>
->>>>>>> dec3cd8f029bf5a5e12c8955e64f87a954ab8842

@@ -1,45 +1,79 @@
-# Artifacts
+# Artifacts — petits outils pour enseignants et formateurs
 
-| English | Français |
-| - | - |
-| Demo v1: [chess-famous-games-reader](https://fxpar.github.io/artifacts/chess-famous-games-reader/chess-v1.html) | Démo v1: [echec-parties-celebres](https://fxpar.github.io/artifacts/echec-parties-celebres/echec-v1.html) |
-| Demo v2: [chess-famous-games-reader](https://fxpar.github.io/artifacts/chess-famous-games-reader/chess-v2.html) | Démo v2: [echec-parties-celebres](https://fxpar.github.io/artifacts/echec-parties-celebres/echec-v2.html) |
+Une collection de petits outils web créés avec l'aide de l'IA, pour gagner du temps au quotidien : Moodle, Blackboard, supports de cours, tableaux, données…
 
-_____________
+🌐 **Site des outils : https://fxpar.github.io/artifacts/**
 
-# Artifacts
+Chaque outil est une simple page HTML : il s'ouvre dans le navigateur, sans installation ni compte.
 
-Artefacts (petits outils) créés par IA pour différentes utilités
+> 🔒 **Vos données restent chez vous.** Les fichiers que vous déposez sont traités dans votre navigateur et ne sont envoyés à aucun serveur. Seules exceptions, signalées dans l'outil concerné : l'analyse par IA de l'échiquier v3 (envoi de la position à Google Gemini, avec votre propre clé) et le générateur de blasons (récupération des icônes sur Iconify).
 
 ## Moodle
 
-- [Sélecteur questions moodle par catégorie et tag](moodle-xml-selecteur): Obtenir les questions moodle filtrées sur certaines catégories et certains tags et certains types, à partir d'un grand fichier de questions. Inclus une prévisualisation des questions.
-- [Moodle cloze en html:](moodle-cloze-html)Convertit les questions cloze de moodle en question accessible sur une page web hors moodle. (Utile pour les écoles qui n'ont pas de plateforme).
-- [moodle-xml-traduction:](moodle-xml-traduction)(imparfait) Permet d'avoir un fichier de questions allégé (sans les images) pour le faire traduire par une IA et le réinjecter dans moodle. (il y a des erreurs qui bloquent lors du réimport... impossible de voir pourquoi).
-- [moodle-xml-text](moodle-xml-text): Extrait le maximum de texte du fichier d'une banque de question. Utilité: permet de donner les questions à une IA qui va construire le support de cours correspondant aux évaluations
+| Outil | Description |
+| - | - |
+| [Sélecteur de questions](https://fxpar.github.io/artifacts/moodle-xml-selecteur/) | Extrait d'une grosse banque de questions Moodle (XML) les questions de certaines catégories, étiquettes et types, avec prévisualisation. |
+| [Questions Cloze en HTML](https://fxpar.github.io/artifacts/moodle-cloze-html/quiz.html) | Transforme des questions Cloze Moodle en quiz sur une page web autonome, pour les écoles sans plateforme. |
+| [Texte d'une banque de questions](https://fxpar.github.io/artifacts/moodle-xml-text/) | Extrait tout le texte d'une banque de questions, par exemple pour demander à une IA de rédiger le support de cours correspondant aux évaluations. |
+| [Traduction de questions](https://fxpar.github.io/artifacts/moodle-xml-traduction/) | *(Imparfait)* Allège un fichier de questions (sans images) pour le faire traduire par une IA puis le réimporter. Certains réimports échouent encore. |
 
 ## Blackboard
 
-- [moodle-cloze-blackboard-fill-blank](moodle-cloze-blackboard-fill-blank): Convertit un fichier xml de questions cloze moodle en questions "FIB" (Texte à trou, fill in the blank) de Blackboard. Le résultat n'est pas un fichier d'import, mais le texte de la question à copier-coller (en texte brut Ctrl+maj+V) dans les questions FIB, qui est parfaitement traité en faisant "étape suivante" (next step) dans blackboard.
+| Outil | Description |
+| - | - |
+| [Rapport d'enquête Blackboard](https://fxpar.github.io/artifacts/blackboard-forms/) | Transforme l'export CSV / Excel d'une enquête Blackboard en rapport imprimable : graphiques pour les questions à choix, citations anonymisées pour les réponses libres. |
+| [Cloze Moodle → texte à trous Blackboard](https://fxpar.github.io/artifacts/moodle-cloze-blackboard-fill-blank/) | Convertit des questions Cloze Moodle (XML) en questions « Fill in the blank » Blackboard. Le résultat est un texte à coller (Ctrl+Maj+V) dans la question, que Blackboard traite ensuite avec « Étape suivante ». |
+
+## Supports de cours
+
+| Outil | Description |
+| - | - |
+| [Md2Bootstrap](https://fxpar.github.io/artifacts/md2bootstrap/) | Met en forme un support de cours Markdown (rédigé par une IA, par exemple) avec Bootstrap 5, en deux versions : bloc pour Moodle, page complète pour Blackboard. |
+| [Markdown ↔ HTML](https://fxpar.github.io/artifacts/markdown-html/) | Convertit du Markdown en HTML et inversement. Les accents et apostrophes sont convertis en entités HTML pour un code strict. |
+| [Word sans titres](https://fxpar.github.io/artifacts/word-sans-titres/) | Retire les niveaux de titre d'un document Word en gardant la mise en forme : idéal pour un exercice où les étudiants doivent refaire la table des matières. |
+| [Données en cartes](https://fxpar.github.io/artifacts/data-en-cards/) | Remplit un modèle de carte à partir de données JSON ou CSV, puis imprime les cartes en PDF. |
+| [Radar de compétences](https://fxpar.github.io/artifacts/test-recrutement-radar/test-IA.html) | Crée un graphique radar à partir d'un référentiel de compétences et de résultats de tests. |
+
+## Tableaux et données
+
+| Outil | Description |
+| - | - |
+| [Tableau Excel / Word → HTML](https://fxpar.github.io/artifacts/tableau-excel-word-html/) | Convertit un tableau Excel ou Word en HTML, avec options : numéros de ligne et lettres de colonne, conservation des formats, symboles monétaires… |
+| [Tableaux → Markdown, CSV, JSON](https://fxpar.github.io/artifacts/tableaux-excel-word-markdown-json-csv/) | Convertit des tableaux Excel ou Word en Markdown, CSV ou JSON. |
+| [JSON → Markdown](https://fxpar.github.io/artifacts/json-to-markdown/) | Rend un fichier JSON lisible : les clés deviennent des titres, les tableaux des listes. |
+| [JSON Visualizer](https://fxpar.github.io/artifacts/json-visualizer/) | Affiche un JSON en grand et en couleur, pour zoomer dessus à l'écran (créé pour une vidéo). |
+| [Yahoo Finance → Excel](https://fxpar.github.io/artifacts/yahoo-finance-html-excel/) | Nettoie le tableau d'historique des cours copié depuis Yahoo Finance et le prépare pour Excel. |
 
 ## Chinois
 
-- [Chinois Pynyin tons](chinois-pinyin-tons)
-- [Chinois Convertisseur simplifié - traditionnel](chinois-simp-trad)
+| Outil | Description |
+| - | - |
+| [Hanzi → pinyin](https://fxpar.github.io/artifacts/chinois-pinyin-tons/) | Ajoute le pinyin avec les tons à un texte chinois : après chaque caractère, au-dessus (ruby) ou en fin de texte. |
+| [Simplifié → traditionnel](https://fxpar.github.io/artifacts/chinois-simp-trad/) | Convertit un texte en caractères simplifiés vers les caractères traditionnels. |
 
-## Divers
+## Graphisme
 
-- [data-en-cards](data-en-cards): Remplit des modèles de "cartes" à partir de données json ou csv
-- [word-sans-titres](word-sans-titres): Retire le "niveau de titre" tout en conservant la mise en forme (utile pour créer un exercice où les étudiants doivent refaire la table des matières)
-- [tableau-excel-word-html](tableau-excel-word-html): convertit des tableaux Excel ou Word en html, en choisissant des paramètres: ajouter les numéros de ligne et lettre des colonne, conserver les formats, les symboles monétaires...
-- [tableaux-excel-word-markdown-json-csv](tableaux-excel-word-markdown-json-csv): permet de transformer différents tableaux Excel / Word en markdown, csv ou json
-- [markdown-html](markdown-html): Convertit du markdown en html: attention, beaucoup de caractères sont transformé en entité (l'apostrophe et les accents sont convertis pour avoir un format html strict)
-- [test-recrutement-radar](test-recrutement-radar): Crée un graphique radar à partir d'un référentiel d'évaluation et de tests d'évaluation
+| Outil | Description |
+| - | - |
+| [ShieldForge](https://fxpar.github.io/artifacts/shield-generator/) | Crée des blasons et badges personnalisés (icônes, forme, banderole) et les exporte en SVG ou PNG. |
 
-## 🎵 Outils d'Indexation pour Songbooks & PDF
+## Échecs et démonstrations d'IA
 
-Le dossier [pdf-manipulator](https://github.com/fxpar/abc-notation-artifacts) contient un ensemble de scripts Python conçus pour automatiser et simplifier la gestion, l'extraction de sommaires et l'injection de signets (index) dans des fichiers PDF volumineux, particulièrement adaptés aux recueils de partitions de musique (*songbooks*).
+| Outil | Description |
+| - | - |
+| [Parties d'échecs célèbres](echec-parties-celebres) | Lecteur de parties célèbres ([v1](https://fxpar.github.io/artifacts/echec-parties-celebres/echec-v1.html), [v2](https://fxpar.github.io/artifacts/echec-parties-celebres/echec-v2.html), [v3](https://fxpar.github.io/artifacts/echec-parties-celebres/echec-v3.html)). La v3 montre aux étudiants comment une application peut interroger une IA en pleine partie pour proposer plusieurs scénarios de coups. |
+| [Chess famous games reader](chess-famous-games-reader) | Version anglaise ([v1](https://fxpar.github.io/artifacts/chess-famous-games-reader/chess-v1.html), [v2](https://fxpar.github.io/artifacts/chess-famous-games-reader/chess-v2.html)). |
 
-## Autre artefacts musicaux
+## Scripts Python
 
-Le répertoire [abc-notation-artifacts](https://github.com/fxpar/abc-notation-artifacts) contient des minis applis liées à la musique en notation abc, qui est un langage ultra simple (texte) pour composer des partitions de simple à complexe et entendre ce que cela donne. Notamment très utile pour rapidement créé une boucle d'accord sur laquelle improviser.
+| Outil | Description |
+| - | - |
+| [pdf-manipulator](pdf-manipulator) | Scripts Python pour gérer les signets de gros PDF (recueils de partitions notamment) : extraction des sommaires et des pages, injection d'index. Nécessite Python : ne s'exécute pas dans le navigateur. |
+
+## Autres dépôts
+
+- [abc-notation-artifacts](https://github.com/fxpar/abc-notation-artifacts) : mini-applications autour de la notation musicale ABC, un langage texte très simple pour écrire des partitions et les écouter (pratique pour créer une boucle d'accords sur laquelle improviser).
+
+## Licence
+
+[MIT](LICENSE) : vous pouvez utiliser, copier, modifier et redistribuer ces outils librement, y compris à des fins commerciales, à condition de conserver la mention de copyright. Aucune garantie n'est fournie.
