@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapport d'Enquête Blackboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS : lecture des fichiers Excel (.xlsx / .xls) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .bar-fill { transition: width .5s ease; }
+        @media print {
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            body { background: white !important; color: black !important; }
+            .no-print { display: none !important; }
+            .print-container { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; border: none !important; }
+            .report-section { break-inside: avoid; page-break-inside: avoid; margin-bottom: 1.5rem !important; }
+            /* Les longues listes de réponses libres peuvent se couper entre deux pages */
+            .report-section.allow-break { break-inside: auto; page-break-inside: auto; }
+            .citation { break-inside: avoid; page-break-inside: avoid; }
+            @page { size: A4 portrait; margin: 1.5cm; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 h-full flex flex-col antialiased">
+
+    <header class="no-print bg-slate-900 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 p-2 rounded-xl text-white font-bold text-xl shadow">📊</div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight">Générateur de Rapports d'Enquête <span class="text-xs font-medium text-indigo-300 align-middle">v2</span></h1>
+                    <p class="text-xs text-slate-400">Exports Blackboard CSV / Excel • mise en page optimisée pour PDF</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 flex-wrap justify-center">
+                <button onclick="loadDemoData()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium rounded-xl border border-slate-700 transition">⚡ Démo</button>
+                <button onclick="generateReport()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl shadow-lg shadow-indigo-600/30 transition">✨ Générer</button>
+                <button onclick="window.print()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl shadow-lg shadow-emerald-600/30 transition">🖨️ Imprimer / PDF</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-8">
+
+        <section class="no-print bg-white rounded-2xl shadow-sm border border-slate-200 p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1 flex flex-col gap-4">
+                <h2 class="text-lg font-semibold text-slate-900 border-b pb-2">📝 Paramètres du rapport</h2>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Titre de l'enquête</label>
+                    <input type="text" id="surveyTitle" value="Retour des étudiants" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Promotion / Groupe</label>
+                    <input type="text" id="surveyPromo" value="" placeholder="ex : Master 1 – 2025-2026" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Date</label>
+                    <input type="date" id="surveyDate" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="flex flex-col gap-2 text-sm">
+                    <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="optAnonymize" checked class="accent-indigo-600"> Anonymiser les réponses libres</label>
+                    <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="optGroupText" checked class="accent-indigo-600"> Regrouper les réponses libres identiques</label>
+                    <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="optShowUnanswered" class="accent-indigo-600"> Afficher « Sans réponse » dans les graphiques</label>
+                </div>
+                <div class="mt-auto text-xs text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    💡 Le type de chaque question (<strong>choix</strong> ou <strong>texte libre</strong>) est détecté automatiquement. En cas d'erreur, utilisez le bouton de bascule à droite de la question : votre choix est mémorisé.
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 flex flex-col gap-4">
+                <h2 class="text-lg font-semibold text-slate-900 border-b pb-2">📂 Données (CSV, Excel ou copier-coller)</h2>
+                <div class="flex-grow flex flex-col gap-2">
+                    <div class="flex justify-between items-center">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500">Collez vos données ci-dessous :</label>
+                        <span id="rowCountIndicator" class="text-xs font-medium text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">0 ligne</span>
+                    </div>
+                    <textarea id="csvDataInput" rows="8" placeholder="Username	Last Name	First Name	Full Name	Question ID	Question	Answer" class="w-full flex-grow font-mono text-xs p-3 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y"></textarea>
+                </div>
+                <div id="dropZone" class="border-2 border-dashed border-slate-300 hover:border-indigo-500 bg-slate-50 p-4 rounded-xl text-center cursor-pointer transition flex items-center justify-center gap-3">
+                    <span class="text-xl">📄</span>
+                    <div class="text-left">
+                        <p class="text-sm font-medium text-slate-700">Glissez-déposez un fichier .csv, .txt, .xls ou .xlsx</p>
+                        <p class="text-xs text-slate-400">ou cliquez pour parcourir</p>
+                    </div>
+                    <input type="file" id="csvFileInput" accept=".csv,.txt,.tsv,.xls,.xlsx" class="hidden">
+                </div>
+                <p id="statusMsg" class="text-xs text-slate-500 min-h-[1rem]"></p>
+            </div>
+        </section>
+
+        <div id="reportContainer" class="print-container bg-white rounded-2xl shadow-md border border-slate-200 p-8 sm:p-12 flex flex-col gap-8">
+            <div class="border-b-2 border-slate-900 pb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 report-section">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-widest text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full inline-block mb-3">Rapport d'évaluation</span>
+                    <h2 id="outTitle" class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Titre de l'enquête</h2>
+                    <p id="outPromo" class="text-lg font-medium text-slate-600 mt-1"></p>
+                </div>
+                <div class="text-left sm:text-right bg-slate-50 p-4 rounded-xl border border-slate-200 min-w-[200px]">
+                    <p class="text-xs text-slate-500 font-semibold uppercase">Date du rapport</p>
+                    <p id="outDate" class="text-base font-bold text-slate-800 mt-0.5">-</p>
+                    <div class="mt-2 pt-2 border-t border-slate-200 flex flex-col gap-0.5 text-xs text-slate-600">
+                        <span>Participants : <strong id="outParticipantsCount" class="text-slate-900">0</strong></span>
+                        <span>Questions : <strong id="outQuestionsCount" class="text-slate-900">0</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="questionsContainer" class="flex flex-col gap-8">
+                <div class="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                    <span class="text-4xl block mb-3">📊</span>
+                    <h3 class="text-lg font-semibold text-slate-700">Aucun rapport généré</h3>
+                    <p class="text-sm text-slate-500 max-w-md mx-auto mt-1">Déposez un export Blackboard, collez vos données ou chargez la démo.</p>
+                </div>
+            </div>
+
+            <div class="text-center pt-8 border-t border-slate-200 text-xs text-slate-400 mt-auto">
+                <p>Généré automatiquement par l'outil d'évaluation des enquêtes • Document conforme pour impression et archivage PDF</p>
+            </div>
+        </div>
+    </main>
+
+<script>
+/* =========================================================================
+   Constantes & état
+   ========================================================================= */
+const NO_ANSWER = ['<sans réponse>', '<unanswered>', '<no answer>', '<pas de réponse>', ''];
+const IGNORED_QUESTIONS = ['contenu supplémentaire', 'additional content'];
+const OVERRIDE_KEY = 'bbforms.typeOverrides';
+const PALETTE = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#84cc16', '#f97316'];
+
+const textarea = document.getElementById('csvDataInput');
+const statusMsg = document.getElementById('statusMsg');
+document.getElementById('surveyDate').valueAsDate = new Date();
+
+let typeOverrides = {};
+try { typeOverrides = JSON.parse(localStorage.getItem(OVERRIDE_KEY) || '{}'); } catch (e) { typeOverrides = {}; }
+function saveOverrides() { try { localStorage.setItem(OVERRIDE_KEY, JSON.stringify(typeOverrides)); } catch (e) {} }
+
+['optAnonymize', 'optGroupText', 'optShowUnanswered'].forEach(id =>
+    document.getElementById(id).addEventListener('change', () => { if (textarea.value.trim()) generateReport(); }));
+['surveyTitle', 'surveyPromo', 'surveyDate'].forEach(id =>
+    document.getElementById(id).addEventListener('input', updateHeader));
+
+/* =========================================================================
+   Utilitaires
+   ========================================================================= */
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+/** Nettoie une réponse Blackboard : <br>, balises HTML, entités, espaces. */
+function cleanAnswer(raw) {
+    let s = String(raw ?? '');
+    if (NO_ANSWER.includes(s.trim().toLowerCase())) return '';
+    s = s.replace(/<br\s*\/?>/gi, '\n').replace(/<\/?(p|div|span|strong|em|b|i|u)[^>]*>/gi, '');
+    const t = document.createElement('textarea');
+    t.innerHTML = s;                      // décode &amp; &eacute; ...
+    s = t.value.replace(/[ \t]+/g, ' ').replace(/\n{2,}/g, '\n').trim();
+    return s;
+}
+
+/** Clé de regroupement : insensible à la casse, aux accents et à la ponctuation finale. */
+function normKey(s) {
+    return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[\s.!?;:,]+$/g, '').replace(/\s+/g, ' ').trim();
+}
+
+/* =========================================================================
+   Parsing CSV conforme RFC 4180 (guillemets, virgules et retours à la ligne
+   dans les champs). C'était la cause du bug : « What is your major (Audit, IBM… »
+   était coupé à la virgule et « IBM » devenait la réponse.
+   ========================================================================= */
+function detectDelimiter(text) {
+    // Compte les délimiteurs hors guillemets sur la première ligne logique
+    const counts = { '\t': 0, ';': 0, ',': 0 };
+    let inQ = false;
+    for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (c === '"') inQ = !inQ;
+        else if (!inQ && (c === '\n' || c === '\r')) break;
+        else if (!inQ && c in counts) counts[c]++;
+    }
+    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][1] > 0
+        ? Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0] : ',';
+}
+
+function parseCSV(text, delimiter) {
+    text = text.replace(/^﻿/, '');
+    delimiter = delimiter || detectDelimiter(text);
+    const rows = [];
+    let row = [], field = '', inQ = false;
+    for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (inQ) {
+            if (c === '"') {
+                if (text[i + 1] === '"') { field += '"'; i++; }
+                else inQ = false;
+            } else field += c;
+        } else if (c === '"' && field === '') {
+            inQ = true;
+        } else if (c === delimiter) {
+            row.push(field); field = '';
+        } else if (c === '\n' || c === '\r') {
+            if (c === '\r' && text[i + 1] === '\n') i++;
+            row.push(field); field = '';
+            if (row.some(f => f !== '')) rows.push(row);
+            row = [];
+        } else field += c;
+    }
+    row.push(field);
+    if (row.some(f => f !== '')) rows.push(row);
+    return rows;
+}
+
+/* =========================================================================
+   Mapping des colonnes (FR / EN, avec repli sur les positions Blackboard)
+   ========================================================================= */
+function mapColumns(header) {
+    const h = header.map(x => normKey(String(x)));
+    const find = (cands, fallback) => {
+        const idx = h.findIndex(x => cands.some(c => x === c));
+        return idx >= 0 ? idx : fallback;
+    };
+    return {
+        username:  find(["nom d'utilisateur", 'username', 'user name'], 0),
+        fullName:  find(['nom complet', 'full name'], 3),
+        code:      find(['code question', 'question id', 'id question'], 4),
+        question:  find(['question'], 5),
+        answer:    find(['reponse', 'answer', 'response'], 6),
+    };
+}
+
+function rowsToRecords(table) {
+    if (table.length < 2) return [];
+    const cols = mapColumns(table[0]);
+    const recs = [];
+    for (let i = 1; i < table.length; i++) {
+        const r = table[i];
+        const q = String(r[cols.question] ?? '').trim();
+        if (!q || IGNORED_QUESTIONS.includes(q.toLowerCase())) continue;
+        recs.push({
+            user: String(r[cols.username] ?? '').trim(),
+            fullName: String(r[cols.fullName] ?? '').trim(),
+            code: String(r[cols.code] ?? '').trim(),
+            question: q,
+            answer: cleanAnswer(r[cols.answer]),
+        });
+    }
+    return recs;
+}
+
+/* =========================================================================
+   Détection du type de question
+   ========================================================================= */
+function detectType(answers) {
+    const answered = answers.filter(a => a);
+    const n = answered.length;
+    if (n === 0) return 'choice';
+    const uniq = new Set(answered.map(normKey)).size;
+    const avgLen = answered.reduce((s, a) => s + a.length, 0) / n;
+    const maxLen = Math.max(...answered.map(a => a.length));
+
+    // Une réponse multi-lignes ou très longue = texte libre
+    if (answered.some(a => a.includes('\n')) || maxLen > 120) return 'text';
+    // Petits échantillons : peu d'options et réponses courtes
+    if (n < 8) return (uniq <= Math.max(2, Math.ceil(n * 0.6)) && avgLen < 40) ? 'choice' : 'text';
+    // Échantillons normaux : les options d'un QCM se répètent beaucoup
+    const ratio = uniq / n;
+    if (uniq <= 10 && ratio <= 0.5) return 'choice';
+    return 'text';
+}
+
+/* =========================================================================
+   Chargement des fichiers (CSV UTF-8/UTF-16/ANSI, XLS, XLSX)
+   ========================================================================= */
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('csvFileInput');
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('border-indigo-500', 'bg-indigo-50'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-indigo-500', 'bg-indigo-50'));
+dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => { if (e.target.files.length) handleFile(e.target.files[0]); fileInput.value = ''; });
+
+let loadedTable = null;   // tableau issu d'un Excel binaire (non représentable proprement dans le textarea)
+
+async function handleFile(file) {
+    const buf = new Uint8Array(await file.arrayBuffer());
+    let text = null;
+    try {
+        const isZip = buf[0] === 0x50 && buf[1] === 0x4B;              // .xlsx
+        const isOle = buf[0] === 0xD0 && buf[1] === 0xCF;              // .xls binaire
+        if (isZip || isOle) {
+            if (typeof XLSX === 'undefined') throw new Error("La librairie Excel n'a pas pu être chargée (connexion internet ?).");
+            const wb = XLSX.read(buf, { type: 'array' });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const table = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+            text = table.map(r => r.map(c => String(c).replace(/\t/g, ' ').replace(/\r?\n/g, '<br>')).join('\t')).join('\n');
+        } else if (buf[0] === 0xFF && buf[1] === 0xFE) {
+            text = new TextDecoder('utf-16le').decode(buf);            // .xls « texte » de Blackboard
+        } else if (buf[0] === 0xFE && buf[1] === 0xFF) {
+            text = new TextDecoder('utf-16be').decode(buf);
+        } else {
+            try { text = new TextDecoder('utf-8', { fatal: true }).decode(buf); }
+            catch { text = new TextDecoder('windows-1252').decode(buf); }
+        }
+    } catch (err) {
+        statusMsg.innerHTML = `<span class="text-red-600">❌ ${escapeHtml(err.message)}</span>`;
+        return;
+    }
+    textarea.value = text.replace(/^﻿/, '');
+    // Titre automatique à partir du nom de fichier
+    const title = file.name.replace(/\.[^.]+$/, '').replace(/\.download.*$/i, '').trim();
+    if (title) document.getElementById('surveyTitle').value = title;
+    statusMsg.textContent = `✅ Fichier chargé : ${file.name}`;
+    updateRowCount();
+    generateReport();
+}
+
+textarea.addEventListener('input', updateRowCount);
+function updateRowCount() {
+    const val = textarea.value.trim();
+    const n = val ? Math.max(0, parseCSV(val).length - 1) : 0;
+    document.getElementById('rowCountIndicator').innerText = `${n} ligne${n > 1 ? 's' : ''} de données`;
+}
+
+/* =========================================================================
+   Génération du rapport
+   ========================================================================= */
+function updateHeader() {
+    document.getElementById('outTitle').innerText = document.getElementById('surveyTitle').value || "Rapport d'enquête";
+    document.getElementById('outPromo').innerText = document.getElementById('surveyPromo').value || '';
+    const d = document.getElementById('surveyDate').value;
+    document.getElementById('outDate').innerText = d
+        ? new Date(d + 'T12:00').toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' }) : '-';
+}
+
+let lastQuestions = [];
+
+function generateReport() {
+    const raw = textarea.value.trim();
+    if (!raw) { statusMsg.innerHTML = '<span class="text-amber-600">Veuillez saisir ou charger des données.</span>'; return; }
+    updateHeader();
+
+    const recs = rowsToRecords(parseCSV(raw));
+    if (!recs.length) { statusMsg.innerHTML = '<span class="text-red-600">❌ Aucune donnée exploitable trouvée. Vérifiez le format.</span>'; return; }
+
+    const participants = new Set(recs.map(r => r.user || r.fullName));
+    document.getElementById('outParticipantsCount').innerText = participants.size;
+
+    // Regroupement par question (ordre d'apparition conservé)
+    const map = new Map();
+    recs.forEach(r => {
+        const key = `${r.code}|${r.question}`;
+        if (!map.has(key)) map.set(key, { code: r.code, text: r.question, entries: [] });
+        map.get(key).entries.push({ user: r.fullName || r.user || 'Anonyme', answer: r.answer });
+    });
+    lastQuestions = [...map.values()];
+    document.getElementById('outQuestionsCount').innerText = lastQuestions.length;
+    renderQuestions();
+}
+
+function renderQuestions() {
+    const container = document.getElementById('questionsContainer');
+    container.innerHTML = '';
+    lastQuestions.forEach((q, i) => container.appendChild(renderQuestion(q, i)));
+}
+
+function renderQuestion(q, idx) {
+    const answers = q.entries.map(e => e.answer);
+    const answeredCount = answers.filter(a => a).length;
+    const total = q.entries.length;
+    const auto = detectType(answers);
+    const type = typeOverrides[q.text] || auto;
+    const isText = type === 'text';
+
+    const card = document.createElement('div');
+    card.className = 'report-section bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm flex flex-col gap-5' + (isText ? ' allow-break' : '');
+
+    const pct = total ? Math.round(answeredCount / total * 100) : 0;
+    card.innerHTML = `
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <div class="flex items-center gap-3 mb-1 flex-wrap">
+                    <span class="bg-indigo-50 text-indigo-700 font-bold text-xs px-2.5 py-1 rounded-md">Question ${escapeHtml(q.code || idx + 1)}</span>
+                    <span class="text-xs text-slate-400 uppercase tracking-wider">${isText ? 'Réponse libre' : 'Question à choix'}</span>
+                    <span class="text-xs text-slate-500">• ${answeredCount}/${total} réponses (${pct} %)</span>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900">${escapeHtml(q.text)}</h3>
+            </div>
+            <button class="no-print shrink-0 text-xs px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 transition"
+                    title="Détection automatique : ${auto === 'text' ? 'texte libre' : 'choix'}${typeOverrides[q.text] ? ' (forcé manuellement)' : ''}">
+                ⇄ Afficher en ${isText ? 'graphique' : 'texte'}${typeOverrides[q.text] ? ' <span class="text-indigo-600">●</span>' : ''}
+            </button>
+        </div>`;
+
+    card.querySelector('button').addEventListener('click', () => {
+        const next = isText ? 'choice' : 'text';
+        if (next === auto) delete typeOverrides[q.text]; else typeOverrides[q.text] = next;
+        saveOverrides();
+        card.replaceWith(renderQuestion(q, idx));
+    });
+
+    card.appendChild(isText ? renderText(q) : renderChoice(q));
+    return card;
+}
+
+function renderChoice(q) {
+    const showUnanswered = document.getElementById('optShowUnanswered').checked;
+    // Regroupe les variantes (casse, espaces, accents) sous le libellé le plus fréquent
+    const groups = new Map();
+    q.entries.forEach(e => {
+        let a = e.answer;
+        if (!a) { if (!showUnanswered) return; a = 'Sans réponse'; }
+        const k = normKey(a);
+        if (!groups.has(k)) groups.set(k, { count: 0, labels: {} });
+        const g = groups.get(k);
+        g.count++;
+        g.labels[a] = (g.labels[a] || 0) + 1;
+    });
+    const items = [...groups.values()].map(g => ({
+        label: Object.entries(g.labels).sort((a, b) => b[1] - a[1])[0][0],
+        count: g.count,
+    })).sort((a, b) => b.count - a.count);
+
+    const wrap = document.createElement('div');
+    if (!items.length) {
+        wrap.innerHTML = '<p class="text-sm text-slate-400 italic bg-slate-50 p-4 rounded-xl">Aucune réponse pour cette question.</p>';
+        return wrap;
+    }
+    const sum = items.reduce((s, it) => s + it.count, 0);
+    const max = items[0].count;
+    wrap.className = 'flex flex-col gap-3 bg-slate-50/60 p-5 rounded-xl border border-slate-100';
+    wrap.innerHTML = items.map((it, i) => {
+        const p = Math.round(it.count / sum * 100);
+        const color = it.label === 'Sans réponse' && showUnanswered ? '#cbd5e1' : PALETTE[i % PALETTE.length];
+        return `
+        <div class="grid grid-cols-[minmax(0,14rem)_1fr_auto] sm:grid-cols-[minmax(0,18rem)_1fr_auto] items-center gap-3">
+            <span class="text-sm text-slate-700 leading-snug" title="${escapeHtml(it.label)}">${escapeHtml(it.label)}</span>
+            <div class="h-7 bg-slate-200/70 rounded-lg overflow-hidden">
+                <div class="bar-fill h-full rounded-lg" style="width:${Math.max(2, it.count / max * 100)}%;background:${color}"></div>
+            </div>
+            <span class="text-sm tabular-nums text-slate-800 font-semibold w-24 text-right">${it.count} <span class="text-slate-400 font-normal">(${p} %)</span></span>
+        </div>`;
+    }).join('');
+    return wrap;
+}
+
+function renderText(q) {
+    const anonymize = document.getElementById('optAnonymize').checked;
+    const group = document.getElementById('optGroupText').checked;
+    const answered = q.entries.filter(e => e.answer);
+    const wrap = document.createElement('div');
+    wrap.className = 'flex flex-col gap-2.5';
+    if (!answered.length) {
+        wrap.innerHTML = '<p class="text-sm text-slate-400 italic bg-slate-50 p-4 rounded-xl">Aucune réponse textuelle enregistrée pour cette question.</p>';
+        return wrap;
+    }
+
+    let items;
+    if (group) {
+        const m = new Map();
+        answered.forEach(e => {
+            const k = normKey(e.answer);
+            if (!m.has(k)) m.set(k, { text: e.answer, users: [] });
+            m.get(k).users.push(e.user);
+        });
+        items = [...m.values()].sort((a, b) => b.users.length - a.users.length);
+    } else {
+        items = answered.map(e => ({ text: e.answer, users: [e.user] }));
+    }
+
+    wrap.innerHTML = items.map(it => `
+        <div class="citation bg-slate-50 border border-slate-200/80 px-4 py-3 rounded-xl flex items-start gap-3">
+            <p class="text-sm text-slate-800 italic flex-grow whitespace-pre-line">« ${escapeHtml(it.text)} »</p>
+            <div class="shrink-0 flex flex-col items-end gap-1">
+                ${it.users.length > 1 ? `<span class="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full">×${it.users.length}</span>` : ''}
+                <span class="text-[11px] text-slate-400 font-medium text-right">${anonymize ? '' : '— ' + escapeHtml(it.users.join(', '))}</span>
+            </div>
+        </div>`).join('');
+    return wrap;
+}
+
+/* =========================================================================
+   Démo
+   ========================================================================= */
+const demoCsvText = `"Nom d'utilisateur","Nom","Prénom","Nom complet","Code question","Question","Réponse"
+"hpotter","POTTER","Harry","Harry POTTER","1","Durant cette séance avez-vous appris des choses?","Un peu"
+"hpotter","POTTER","Harry","Harry POTTER","2","Le rythme de la séance vous a paru:","Trop lent"
+"hpotter","POTTER","Harry","Harry POTTER","3","Quelle est votre spécialité (Audit, IBM, Logistique...) ?","Logistique"
+"hpotter","POTTER","Harry","Harry POTTER","4","Que souhaiteriez-vous adapter pour la prochaine séance?","rien"
+"hpotter","POTTER","Harry","Harry POTTER","","Contenu supplémentaire",""
+"hgranger","GRANGER","Hermione","Hermione GRANGER","1","Durant cette séance avez-vous appris des choses?","Un peu"
+"hgranger","GRANGER","Hermione","Hermione GRANGER","2","Le rythme de la séance vous a paru:","Adapté"
+"hgranger","GRANGER","Hermione","Hermione GRANGER","3","Quelle est votre spécialité (Audit, IBM, Logistique...) ?","Audit financier"
+"hgranger","GRANGER","Hermione","Hermione GRANGER","4","Que souhaiteriez-vous adapter pour la prochaine séance?","<Sans réponse>"
+"hgranger","GRANGER","Hermione","Hermione GRANGER","","Contenu supplémentaire",""
+"rweasley","WEASLEY","Ron","Ron WEASLEY","1","Durant cette séance avez-vous appris des choses?","Beaucoup"
+"rweasley","WEASLEY","Ron","Ron WEASLEY","2","Le rythme de la séance vous a paru:","Adapté"
+"rweasley","WEASLEY","Ron","Ron WEASLEY","3","Quelle est votre spécialité (Audit, IBM, Logistique...) ?","Marketing digital"
+"rweasley","WEASLEY","Ron","Ron WEASLEY","4","Que souhaiteriez-vous adapter pour la prochaine séance?","Plus d'exemples pratiques, en direct.<br>Et des pauses !"
+"rweasley","WEASLEY","Ron","Ron WEASLEY","","Contenu supplémentaire",""`;
+
+function loadDemoData() {
+    textarea.value = demoCsvText;
+    document.getElementById('surveyTitle').value = 'Démo – fin de première séance';
+    updateRowCount();
+    generateReport();
+}
+</script>
+</body>
+</html>
