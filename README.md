@@ -12,6 +12,7 @@ Chaque outil est une simple page HTML : il s'ouvre dans le navigateur, sans inst
 
 | Outil | Description |
 | - | - |
+| [Analyseur d'absence](https://fxpar.github.io/artifacts/moodle-absences/) | Affiche la liste de absent à partir d'un journal d'activité (csv) et d'une liste pronote (csv) |
 | [Sélecteur de questions](https://fxpar.github.io/artifacts/moodle-xml-selecteur/) | Extrait d'une grosse banque de questions Moodle (XML) les questions de certaines catégories, étiquettes et types, avec prévisualisation. |
 | [Questions Cloze en HTML](https://fxpar.github.io/artifacts/moodle-cloze-html/quiz.html) | Transforme des questions Cloze Moodle en quiz sur une page web autonome, pour les écoles sans plateforme. |
 | [Texte d'une banque de questions](https://fxpar.github.io/artifacts/moodle-xml-text/) | Extrait tout le texte d'une banque de questions, par exemple pour demander à une IA de rédiger le support de cours correspondant aux évaluations. |
