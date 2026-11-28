@@ -1,5 +1,7 @@
 # Lecteur de parties d'échecs célèbres
 
+> **Version finale : [Chess Famous Games](https://edu-fpar.github.io/chess-famous-games/)** ([code](https://github.com/edu-fpar/chess-famous-games)) : parties vérifiées, moments clés commentés, mode « Devinez le coup », questions pour une IA sans clé API, mode jour / nuit, FR · EN · ES. Les versions ci-dessous restent comme étapes de l'exercice.
+
 | Version | Démo |
 | - | - |
 | v1 | [echec-v1.html](https://fxpar.github.io/artifacts/echec-parties-celebres/echec-v1.html) |
